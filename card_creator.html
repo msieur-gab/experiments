@@ -36,13 +36,13 @@
         <h1 class="card-title">Smart Business Card Writer</h1>
         
         <div class="tabs">
-            <div class="tab active" data-format="smart">Smart Format</div>
-            <div class="tab" data-format="vcard">vCard Format</div>
+            <div class="tab active" data-format="smart">Smart Card</div>
+            <div class="tab" data-format="vcard">vCard</div>
         </div>
 
         <div id="smartForm" class="form-section active">
             <div class="input-group">
-                <label for="smartTitle">Display Title*</label>
+                <label for="smartTitle">Title*</label>
                 <input type="text" id="smartTitle" required placeholder="John Doe - Software Engineer">
             </div>
             <div class="input-group">
@@ -53,24 +53,12 @@
                 <label for="smartUrl">Profile URL*</label>
                 <input type="url" id="smartUrl" required placeholder="https://linkedin.com/in/johndoe">
             </div>
-            <div class="input-group">
-                <label for="smartAction">Action Text</label>
-                <input type="text" id="smartAction" placeholder="View My Profile">
-            </div>
         </div>
 
         <div id="vcardForm" class="form-section">
             <div class="input-group">
                 <label for="name">Full Name*</label>
                 <input type="text" id="name" required placeholder="John Doe">
-            </div>
-            <div class="input-group">
-                <label for="title">Job Title</label>
-                <input type="text" id="title" placeholder="Software Engineer">
-            </div>
-            <div class="input-group">
-                <label for="company">Company</label>
-                <input type="text" id="company" placeholder="Tech Corp">
             </div>
             <div class="input-group">
                 <label for="email">Email*</label>
@@ -80,54 +68,32 @@
                 <label for="phone">Phone</label>
                 <input type="tel" id="phone" placeholder="+1234567890">
             </div>
-            <div class="input-group">
-                <label for="website">Website</label>
-                <input type="url" id="website" placeholder="https://example.com">
-            </div>
-            <div class="input-group">
-                <label for="linkedin">LinkedIn</label>
-                <input type="url" id="linkedin" placeholder="https://linkedin.com/in/johndoe">
-            </div>
         </div>
         
         <button id="writeButton">Write to NFC Tag</button>
-        <button id="readButton">Read NFC Tag</button>
         
         <div id="message" class="message hidden"></div>
-        <div id="debug" class="debug hidden"></div>
         <div id="error" class="error hidden"></div>
         <div id="status"></div>
     </div>
 
     <script>
-        const tabs = document.querySelectorAll('.tab');
-        const forms = document.querySelectorAll('.form-section');
-        const readButton = document.getElementById('readButton');
         const writeButton = document.getElementById('writeButton');
         const messageDiv = document.getElementById('message');
-        const debugDiv = document.getElementById('debug');
         const errorDiv = document.getElementById('error');
         const statusDiv = document.getElementById('status');
 
         let currentFormat = 'smart';
-        let ndefReader = null;
 
-        // Tab switching
-        tabs.forEach(tab => {
+        document.querySelectorAll('.tab').forEach(tab => {
             tab.addEventListener('click', () => {
-                tabs.forEach(t => t.classList.remove('active'));
-                forms.forEach(f => f.classList.remove('active'));
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.form-section').forEach(f => f.classList.remove('active'));
                 tab.classList.add('active');
                 currentFormat = tab.dataset.format;
                 document.getElementById(`${currentFormat}Form`).classList.add('active');
             });
         });
-
-        if (!('NDEFReader' in window)) {
-            showError('Web NFC is not supported in this browser. Please use Chrome for Android.');
-            readButton.disabled = true;
-            writeButton.disabled = true;
-        }
 
         function showMessage(text) {
             messageDiv.textContent = text;
@@ -141,190 +107,49 @@
             messageDiv.classList.add('hidden');
         }
 
-        function showDebug(obj) {
-            debugDiv.textContent = JSON.stringify(obj, null, 2);
-            debugDiv.classList.remove('hidden');
-        }
-
         function updateStatus(text) {
             statusDiv.textContent = text;
         }
 
         function createVCard() {
             const name = document.getElementById('name').value;
-            const title = document.getElementById('title').value;
-            const company = document.getElementById('company').value;
             const email = document.getElementById('email').value;
             const phone = document.getElementById('phone').value;
-            const website = document.getElementById('website').value;
-            const linkedin = document.getElementById('linkedin').value;
 
-            let vCard = 'BEGIN:VCARD\nVERSION:3.0\n';
-            vCard += `FN:${name}\n`;
-            if (title || company) {
-                vCard += `TITLE:${title}\n`;
-                vCard += `ORG:${company}\n`;
-            }
-            if (email) vCard += `EMAIL:${email}\n`;
-            if (phone) vCard += `TEL:${phone}\n`;
-            if (website) vCard += `URL:${website}\n`;
-            if (linkedin) vCard += `X-SOCIALPROFILE;TYPE=linkedin:${linkedin}\n`;
-            vCard += 'END:VCARD';
-
-            return vCard;
+            return `BEGIN:VCARD\r\nVERSION:3.0\r\nFN:${name}\r\nEMAIL:${email}\r\nTEL:${phone}\r\nEND:VCARD\r\n`;
         }
 
         function createSmartPoster() {
             const title = document.getElementById('smartTitle').value;
             const desc = document.getElementById('smartDesc').value;
             const url = document.getElementById('smartUrl').value;
-            const action = document.getElementById('smartAction').value || "View Profile";
 
             return {
                 records: [
-                    {
-                        recordType: "url",
-                        data: url
-                    },
-                    {
-                        recordType: "text",
-                        data: title,
-                        lang: "en"
-                    },
-                    {
-                        recordType: "text",
-                        data: desc,
-                        lang: "en"
-                    },
-                    {
-                        recordType: "text",
-                        data: action,
-                        lang: "en"
-                    }
+                    { recordType: "url", data: url },
+                    { recordType: "text", data: title, lang: "en" },
+                    { recordType: "text", data: desc, lang: "en" }
                 ]
             };
         }
 
-        async function startNFCReader() {
-            try {
-                ndefReader = new NDEFReader();
-                await ndefReader.scan();
-
-                showMessage('NFC scan started. Bring a tag close...');
-                updateStatus('Scanning...');
-
-                ndefReader.addEventListener("error", (event) => {
-                    showError(`NFC Error: ${event.message}`);
-                    updateStatus('Error reading tag');
-                    showDebug({
-                        errorType: event.type,
-                        errorMessage: event.message,
-                        errorName: event.name
-                    });
-                });
-
-                ndefReader.addEventListener("reading", ({ message, serialNumber }) => {
-                    showMessage(`Tag detected! Processing...`);
-                    updateStatus(`Tag ID: ${serialNumber}`);
-
-                    const debugInfo = {
-                        serialNumber,
-                        recordCount: message.records.length,
-                        records: message.records.map((record, index) => {
-                            let data;
-                            try {
-                                const textDecoder = new TextDecoder();
-                                data = textDecoder.decode(record.data);
-                            } catch (e) {
-                                data = `[Binary Data: ${record.data.byteLength} bytes]`;
-                            }
-                            return {
-                                index,
-                                recordType: record.recordType,
-                                encoding: record.encoding,
-                                mediaType: record.mediaType,
-                                data
-                            };
-                        })
-                    };
-                    showDebug(debugInfo);
-
-                    let messageContent = `Tag ID: ${serialNumber}\n\n`;
-                    message.records.forEach((record, index) => {
-                        const textDecoder = new TextDecoder();
-                        let decodedData;
-                        try {
-                            decodedData = textDecoder.decode(record.data);
-                        } catch (e) {
-                            decodedData = `[Binary Data: ${record.data.byteLength} bytes]`;
-                        }
-
-                        messageContent += `Record ${index + 1}:\nType: ${record.recordType}\nData: ${decodedData}\n\n`;
-                    });
-
-                    showMessage(messageContent);
-                    updateStatus('Tag read successfully');
-                });
-
-            } catch (error) {
-                showError(`Error starting NFC reader: ${error.message}`);
-                updateStatus('Failed to start NFC reader');
-                showDebug({
-                    errorType: 'startup',
-                    errorMessage: error.message,
-                    errorStack: error.stack
-                });
-            }
-        }
-
         async function writeNFCTag() {
-            const activeForm = document.querySelector('.form-section.active');
-            if (!activeForm.checkValidity()) {
-                showError('Please fill in all required fields');
-                return;
-            }
-
             try {
                 const ndef = new NDEFReader();
-                showMessage('Hold your device near an NFC tag to write...');
-                updateStatus('Waiting for NFC tag...');
-
-                let recordData;
-                if (currentFormat === 'vcard') {
-                    const vCard = createVCard();
-                    recordData = {
-                        records: [{
-                            recordType: "mime",
-                            mediaType: "text/vcard",
-                            data: vCard
-                        }]
-                    };
-                } else {
-                    recordData = createSmartPoster();
-                }
-
-                showDebug({
-                    messageType: currentFormat,
-                    content: recordData
-                });
+                const recordData = (currentFormat === 'vcard') ? 
+                    { records: [{ recordType: "mime", mediaType: "text/vcard", data: createVCard() }] } : 
+                    createSmartPoster();
 
                 await ndef.write(recordData);
-
-                showMessage(`Successfully wrote ${currentFormat} to NFC tag!`);
-                updateStatus('Write operation completed');
+                showMessage(`Successfully wrote ${currentFormat.toUpperCase()} to NFC tag!`);
+                updateStatus('Write completed');
 
             } catch (error) {
                 showError(`Error writing to NFC: ${error.message}`);
-                updateStatus('Error occurred while writing');
-                showDebug({
-                    errorType: 'write',
-                    errorMessage: error.message,
-                    errorStack: error.stack
-                });
+                updateStatus('Write failed');
             }
         }
 
-        readButton.addEventListener('click', startNFCReader);
         writeButton.addEventListener('click', writeNFCTag);
     </script>
 </body>
