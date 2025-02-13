@@ -12,19 +12,15 @@
         .tabs { display: flex; margin-bottom: 20px; }
         .tab { flex: 1; padding: 10px; text-align: center; background: #f8f9fa; cursor: pointer; }
         .tab.active { background: #007bff; color: white; }
-        .tab:first-child { border-radius: 4px 0 0 4px; }
-        .tab:last-child { border-radius: 0 4px 4px 0; }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; color: #444; }
         .input-group input, .input-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
         .input-group textarea { resize: vertical; min-height: 80px; }
         button { width: 100%; padding: 12px; border: none; border-radius: 4px; background: #007bff; color: white; cursor: pointer; font-size: 16px; transition: 0.2s; margin-bottom: 10px; }
         button:hover { background: #0056b3; }
-        button:disabled { background: #cccccc; cursor: not-allowed; }
-        .message, .error, .debug { padding: 15px; border-radius: 4px; margin-bottom: 15px; white-space: pre-wrap; word-break: break-word; }
+        .message, .error { padding: 15px; border-radius: 4px; margin-bottom: 15px; white-space: pre-wrap; word-break: break-word; }
         .message { background: #f8f9fa; }
         .error { background: #fff3f3; color: #dc3545; }
-        .debug { background: #e6f3ff; font-family: monospace; font-size: 14px; }
         #status { margin-top: 20px; text-align: center; color: #666; }
         .hidden { display: none; }
         .form-section { display: none; }
@@ -47,7 +43,7 @@
             </div>
             <div class="input-group">
                 <label for="smartDesc">Description</label>
-                <textarea id="smartDesc" placeholder="Software Engineer at Tech Corp&#10;Specializing in Web Development"></textarea>
+                <textarea id="smartDesc" placeholder="Software Engineer at Tech Corp"></textarea>
             </div>
             <div class="input-group">
                 <label for="smartUrl">Profile URL*</label>
@@ -82,7 +78,6 @@
         const messageDiv = document.getElementById('message');
         const errorDiv = document.getElementById('error');
         const statusDiv = document.getElementById('status');
-
         let currentFormat = 'smart';
 
         document.querySelectorAll('.tab').forEach(tab => {
@@ -107,16 +102,12 @@
             messageDiv.classList.add('hidden');
         }
 
-        function updateStatus(text) {
-            statusDiv.textContent = text;
-        }
-
         function createVCard() {
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const phone = document.getElementById('phone').value;
-
-            return `BEGIN:VCARD\r\nVERSION:3.0\r\nFN:${name}\r\nEMAIL:${email}\r\nTEL:${phone}\r\nEND:VCARD\r\n`;
+            let vCard = `BEGIN:VCARD\r\nVERSION:3.0\r\nFN:${name}\r\nEMAIL:${email}\r\nTEL:${phone}\r\nEND:VCARD\r\n`;
+            return new TextEncoder().encode(vCard);
         }
 
         function createSmartPoster() {
@@ -126,9 +117,9 @@
 
             return {
                 records: [
-                    { recordType: "url", data: url },
-                    { recordType: "text", data: title, lang: "en" },
-                    { recordType: "text", data: desc, lang: "en" }
+                    { recordType: "text", data: new TextEncoder().encode(title) },
+                    { recordType: "text", data: new TextEncoder().encode(desc) },
+                    { recordType: "url", data: url }
                 ]
             };
         }
@@ -136,17 +127,17 @@
         async function writeNFCTag() {
             try {
                 const ndef = new NDEFReader();
-                const recordData = (currentFormat === 'vcard') ? 
-                    { records: [{ recordType: "mime", mediaType: "text/vcard", data: createVCard() }] } : 
-                    createSmartPoster();
+                const recordData = (currentFormat === 'vcard') 
+                    ? { records: [{ recordType: "mime", mediaType: "text/vcard", data: createVCard() }] } 
+                    : createSmartPoster();
 
                 await ndef.write(recordData);
                 showMessage(`Successfully wrote ${currentFormat.toUpperCase()} to NFC tag!`);
-                updateStatus('Write completed');
+                statusDiv.textContent = 'Write completed';
 
             } catch (error) {
                 showError(`Error writing to NFC: ${error.message}`);
-                updateStatus('Write failed');
+                statusDiv.textContent = 'Write failed';
             }
         }
 
