@@ -9,11 +9,6 @@
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); max-width: 500px; margin: auto; padding: 20px; }
         .card-title { font-size: 24px; text-align: center; margin-bottom: 20px; }
-        .tabs { display: flex; margin-bottom: 20px; }
-        .tab { flex: 1; padding: 10px; text-align: center; background: #f8f9fa; cursor: pointer; }
-        .tab.active { background: #007bff; color: white; }
-        .tab:first-child { border-radius: 4px 0 0 4px; }
-        .tab:last-child { border-radius: 0 4px 4px 0; }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; color: #444; }
         .input-group input, .input-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
@@ -27,8 +22,6 @@
         .error { background: #fff3f3; color: #dc3545; }
         #status { margin-top: 20px; text-align: center; color: #666; }
         .hidden { display: none; }
-        .form-section { display: none; }
-        .form-section.active { display: block; }
     </style>
 </head>
 <body>
@@ -157,27 +150,11 @@ Email: baude.gabriel@gmail.com</textarea>
                 showMessage('Hold your device near an NFC tag to write...');
                 updateStatus('Waiting for NFC tag...');
 
-                const textEncoder = new TextEncoder();
                 await ndef.write({
                     records: [
-                        {
-                            recordType: "url",
-                            data: url
-                        },
-                        {
-                            recordType: "text",
-                            data: textEncoder.encode(title),
-                            lang: "en"
-                        },
-                        {
-                            recordType: "text",
-                            data: textEncoder.encode(desc),
-                            lang: "en"
-                        },
-                        {
-                            recordType: "external",
-                            data: textEncoder.encode("com.google.android.apps.walletnfcrel")
-                        }
+                        { recordType: "url", data: url },
+                        { recordType: "text", data: title, lang: "en" },
+                        { recordType: "text", data: desc, lang: "en" }
                     ]
                 });
 
