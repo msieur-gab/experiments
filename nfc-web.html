@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC Reader/Writer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .button-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            background-color: #fff3f3;
+            color: #dc3545;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+
+        #status {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 class="card-title">NFC Reader/Writer</h1>
+        
+        <div id="support-message"></div>
+        
+        <div class="button-container">
+            <button id="readButton">Read NFC</button>
+            <button id="writeButton">Write NFC</button>
+        </div>
+        
+        <div id="message" class="message hidden"></div>
+        <div id="error" class="error hidden"></div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const supportMessage = document.getElementById('support-message');
+        const readButton = document.getElementById('readButton');
+        const writeButton = document.getElementById('writeButton');
+        const messageDiv = document.getElementById('message');
+        const errorDiv = document.getElementById('error');
+        const statusDiv = document.getElementById('status');
+
+        // Check for NFC support
+        if (!('NDEFReader' in window)) {
+            showError('Web NFC is not supported in this browser');
+            readButton.disabled = true;
+            writeButton.disabled = true;
+        }
+
+        // Helper functions
+        function showMessage(text) {
+            messageDiv.textContent = text;
+            messageDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+        }
+
+        function showError(text) {
+            errorDiv.textContent = text;
+            errorDiv.classList.remove('hidden');
+            messageDiv.classList.add('hidden');
+        }
+
+        function updateStatus(text) {
+            statusDiv.textContent = text;
+        }
+
+        // Read NFC
+        readButton.addEventListener('click', async () => {
+            try {
+                showMessage('Scanning for NFC tags...');
+                const ndef = new NDEFReader();
+                
+                await ndef.scan();
+                updateStatus('Scanning for NFC tags...');
+
+                ndef.addEventListener("reading", ({ message, serialNumber }) => {
+                    let messageContent = `Tag ID: ${serialNumber}\n\n`;
+                    
+                    for (const record of message.records) {
+                        messageContent += `Record type: ${record.recordType}\n`;
+                        
+                        if (record.recordType === "text") {
+                            const textDecoder = new TextDecoder();
+                            const text = textDecoder.decode(record.data);
+                            messageContent += `Content: ${text}\n`;
+                        }
+                    }
+                    
+                    showMessage(messageContent);
+                    updateStatus('Tag read successfully');
+                });
+
+            } catch (error) {
+                showError(`Error reading NFC: ${error.message}`);
+                updateStatus('Error occurred while reading');
+            }
+        });
+
+        // Write NFC
+        writeButton.addEventListener('click', async () => {
+            try {
+                showMessage('Hold your device near an NFC tag to write...');
+                const ndef = new NDEFReader();
+                
+                await ndef.write({
+                    records: [{
+                        recordType: "text",
+                        data: "Hello from Web NFC!",
+                        lang: "en"
+                    }]
+                });
+
+                showMessage('Successfully wrote to NFC tag!');
+                updateStatus('Write operation completed');
+
+            } catch (error) {
+                showError(`Error writing to NFC: ${error.message}`);
+                updateStatus('Error occurred while writing');
+            }
+        });
+    </script>
+</body>
+</html>
