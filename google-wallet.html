@@ -135,7 +135,15 @@ Email: baude.gabriel@gmail.com</textarea>
             }
         }
 
+        let isWriting = false;
+        let writeTimeout;
+
         async function writeSmartPoster() {
+            if (isWriting) {
+                showMessage('Write operation already in progress. Please wait...');
+                return;
+            }
+
             const title = document.getElementById('title').value;
             const desc = document.getElementById('desc').value;
             const url = document.getElementById('url').value;
@@ -146,9 +154,24 @@ Email: baude.gabriel@gmail.com</textarea>
             }
 
             try {
+                isWriting = true;
                 const ndef = new NDEFReader();
-                showMessage('Hold your device near an NFC tag to write...');
+                showMessage('1. Hold your device steady\n2. Place the NFC tag against your phone\n3. Keep the tag still until writing completes');
                 updateStatus('Waiting for NFC tag...');
+
+                // Clear any existing timeout
+                if (writeTimeout) {
+                    clearTimeout(writeTimeout);
+                }
+
+                // Set a new timeout for the entire operation
+                writeTimeout = setTimeout(() => {
+                    if (isWriting) {
+                        isWriting = false;
+                        showError('Write operation timed out. Please try again.');
+                        updateStatus('Write failed');
+                    }
+                }, 5000); // 5 second timeout
 
                 await ndef.write({
                     records: [
@@ -158,13 +181,32 @@ Email: baude.gabriel@gmail.com</textarea>
                     ]
                 });
 
+                clearTimeout(writeTimeout);
                 showMessage('Successfully wrote Smart Poster to NFC tag!');
                 updateStatus('Write operation completed');
                 writeForm.classList.add('hidden');
 
             } catch (error) {
-                showError(`Error writing to NFC: ${error.message}`);
-                updateStatus('Error occurred while writing');
+                clearTimeout(writeTimeout);
+                let errorMessage = 'Error writing to NFC: ';
+                
+                if (error.message.includes('IO error')) {
+                    errorMessage += 'Could not write to tag. Possible causes:\n' +
+                        '- Tag was moved during writing\n' +
+                        '- Tag is read-only or locked\n' +
+                        '- Tag memory is full\n\n' +
+                        'Please try again, keeping the tag still against the phone.';
+                } else if (error.message.includes('cancelled')) {
+                    errorMessage += 'Write operation was interrupted. Please try again.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showError(errorMessage);
+                updateStatus('Write failed');
+
+            } finally {
+                isWriting = false;
             }
         }
 
