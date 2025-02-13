@@ -31,6 +31,7 @@
         <div class="button-container">
             <button id="readButton">Read NFC</button>
             <button id="writeButton">Write NFC</button>
+            <button id="eraseButton">Erase Tag</button>
         </div>
 
         <div id="writeForm" class="hidden">
@@ -107,23 +108,63 @@ Email: baude.gabriel@gmail.com</textarea>
                     showMessage(`Tag detected! Processing...`);
                     updateStatus(`Tag ID: ${serialNumber}`);
 
-                    if (message.records.length === 0) {
-                        showMessage(`Tag detected (ID: ${serialNumber}), but contains no readable data.`);
-                        return;
+                    let messageContent = `Tag Details:\n`;
+                    messageContent += `ID: ${serialNumber}\n`;
+                    
+                    // Try to determine tag type from the serial number format
+                    if (serialNumber) {
+                        if (serialNumber.length === 14) {
+                            messageContent += `Type: Likely NFC Type 2 (NTAG21x series)\n`;
+                        } else if (serialNumber.length === 16) {
+                            messageContent += `Type: Likely NFC Type 4 (DESFire or similar)\n`;
+                        } else {
+                            messageContent += `Type: Unknown format\n`;
+                        }
                     }
 
-                    let messageContent = `Tag ID: ${serialNumber}\n\n`;
-                    message.records.forEach((record, index) => {
-                        const textDecoder = new TextDecoder();
-                        let decodedData;
-                        try {
-                            decodedData = textDecoder.decode(record.data);
-                        } catch (e) {
-                            decodedData = `[Binary Data: ${record.data.byteLength} bytes]`;
-                        }
-
-                        messageContent += `Record ${index + 1}:\nType: ${record.recordType}\nData: ${decodedData}\n\n`;
+                    // Calculate total data size
+                    let totalBytes = 0;
+                    message.records.forEach(record => {
+                        totalBytes += record.data.byteLength;
+                        if (record.recordType) totalBytes += record.recordType.length;
+                        if (record.mediaType) totalBytes += record.mediaType.length;
+                        if (record.lang) totalBytes += record.lang.length;
+                        // Add overhead for NDEF headers
+                        totalBytes += 8;
                     });
+
+                    messageContent += `Current Data Size: ${totalBytes} bytes\n\n`;
+
+                    // Add memory estimation based on common tag types
+                    messageContent += `Estimated Memory:\n`;
+                    if (serialNumber.length === 14) {
+                        messageContent += `NTAG213: 144 bytes\n`;
+                        messageContent += `NTAG215: 504 bytes\n`;
+                        messageContent += `NTAG216: 888 bytes\n`;
+                    } else {
+                        messageContent += `Unknown tag type - memory size cannot be determined\n`;
+                    }
+                    
+                    messageContent += `\nRecords (${message.records.length}):\n`;
+                    
+                    if (message.records.length === 0) {
+                        messageContent += `No records found (empty or non-NDEF tag)\n`;
+                    } else {
+                        message.records.forEach((record, index) => {
+                            const textDecoder = new TextDecoder();
+                            let decodedData;
+                            try {
+                                decodedData = textDecoder.decode(record.data);
+                            } catch (e) {
+                                decodedData = `[Binary Data: ${record.data.byteLength} bytes]`;
+                            }
+
+                            messageContent += `\nRecord ${index + 1}:\n`;
+                            messageContent += `Type: ${record.recordType}\n`;
+                            messageContent += `Size: ${record.data.byteLength} bytes\n`;
+                            messageContent += `Data: ${decodedData}\n`;
+                        });
+                    }
 
                     showMessage(messageContent);
                     updateStatus('Tag read successfully');
@@ -210,6 +251,35 @@ Email: baude.gabriel@gmail.com</textarea>
             }
         }
 
+        async function eraseTag() {
+            try {
+                const ndef = new NDEFReader();
+                showMessage('Hold your device near the NFC tag to erase...');
+                updateStatus('Waiting for tag...');
+
+                // Write an empty NDEF message to effectively erase the tag
+                await ndef.write({
+                    records: []
+                });
+
+                showMessage('Successfully erased NFC tag!');
+                updateStatus('Erase completed');
+
+            } catch (error) {
+                let errorMessage = 'Error erasing tag: ';
+                if (error.message.includes('IO error')) {
+                    errorMessage += 'Could not erase tag. Possible causes:\n' +
+                        '- Tag was moved during operation\n' +
+                        '- Tag is read-only or locked\n\n' +
+                        'Please try again, keeping the tag still against the phone.';
+                } else {
+                    errorMessage += error.message;
+                }
+                showError(errorMessage);
+                updateStatus('Erase failed');
+            }
+        }
+
         // Event Listeners
         readButton.addEventListener('click', startNFCReader);
         writeButton.addEventListener('click', () => {
@@ -217,6 +287,7 @@ Email: baude.gabriel@gmail.com</textarea>
             messageDiv.classList.add('hidden');
             errorDiv.classList.add('hidden');
         });
+        eraseButton.addEventListener('click', eraseTag);
         confirmWriteButton.addEventListener('click', writeSmartPoster);
     </script>
 </body>
