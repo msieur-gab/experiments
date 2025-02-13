@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC Reader/Writer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); max-width: 500px; margin: auto; padding: 20px; }
+        .card-title { font-size: 24px; text-align: center; margin-bottom: 20px; }
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; margin-bottom: 5px; color: #444; }
+        .input-group input, .input-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        .input-group textarea { resize: vertical; min-height: 80px; }
+        .button-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 4px; background: #007bff; color: white; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
+        .message, .error { padding: 15px; border-radius: 4px; margin-bottom: 15px; white-space: pre-wrap; word-break: break-word; }
+        .message { background: #f8f9fa; }
+        .error { background: #fff3f3; color: #dc3545; }
+        #status { margin-top: 20px; text-align: center; color: #666; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1 class="card-title">NFC Reader/Writer</h1>
+        
+        <div class="button-container">
+            <button id="readButton">Read NFC</button>
+            <button id="writeButton">Write NFC</button>
+            <button id="eraseButton">Erase Tag</button>
+        </div>
+
+        <div id="writeForm" class="hidden">
+            <div class="input-group">
+                <label for="title">Title*</label>
+                <input type="text" id="title" value="Gabriel Baude">
+            </div>
+            <div class="input-group">
+                <label for="desc">Description</label>
+                <textarea id="desc">Innovation and design leader
+Email: baude.gabriel@gmail.com</textarea>
+            </div>
+            <div class="input-group">
+                <label for="url">Profile URL*</label>
+                <div class="url-container" style="display: flex; gap: 10px;">
+                    <input type="url" id="url" value="https://www.linkedin.com/in/gabrielbaude/" style="flex: 1;">
+                    <button type="button" id="shortenUrl" style="flex: 0 0 auto; padding: 8px 16px;">Shorten URL</button>
+                </div>
+                <div id="urlSize" style="font-size: 12px; color: #666; margin-top: 4px;"></div>
+            </div>
+            <button id="confirmWrite">Write Smart Poster</button>
+        </div>
+        
+        <div id="message" class="message hidden"></div>
+        <div id="error" class="error hidden"></div>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const readButton = document.getElementById('readButton');
+        const writeButton = document.getElementById('writeButton');
+        const confirmWriteButton = document.getElementById('confirmWrite');
+        const writeForm = document.getElementById('writeForm');
+        const messageDiv = document.getElementById('message');
+        const errorDiv = document.getElementById('error');
+        const statusDiv = document.getElementById('status');
+
+        let ndefReader = null;
+
+        // Check for Web NFC API Support
+        if (!('NDEFReader' in window)) {
+            showError('Web NFC is not supported in this browser. Please use Chrome for Android.');
+            readButton.disabled = true;
+            writeButton.disabled = true;
+        }
+
+        function showMessage(text) {
+            messageDiv.textContent = text;
+            messageDiv.classList.remove('hidden');
+            errorDiv.classList.add('hidden');
+        }
+
+        function showError(text) {
+            errorDiv.textContent = text;
+            errorDiv.classList.remove('hidden');
+            messageDiv.classList.add('hidden');
+        }
+
+        function updateStatus(text) {
+            statusDiv.textContent = text;
+        }
+
+        async function startNFCReader() {
+            try {
+                writeForm.classList.add('hidden');
+                ndefReader = new NDEFReader();
+                await ndefReader.scan();
+
+                showMessage('NFC scan started. Bring a tag close...');
+                updateStatus('Scanning...');
+
+                ndefReader.addEventListener("error", (event) => {
+                    showError(`NFC Error: ${event.message}`);
+                    updateStatus('Error reading tag');
+                });
+
+                ndefReader.addEventListener("reading", ({ message, serialNumber }) => {
+                    showMessage(`Tag detected! Processing...`);
+                    updateStatus(`Tag ID: ${serialNumber}`);
+
+                    let messageContent = `Tag Details:\n`;
+                    messageContent += `ID: ${serialNumber}\n`;
+                    
+                    // Try to determine tag type from the serial number format
+                    if (serialNumber) {
+                        if (serialNumber.length === 14) {
+                            messageContent += `Type: Likely NFC Type 2 (NTAG21x series)\n`;
+                        } else if (serialNumber.length === 16) {
+                            messageContent += `Type: Likely NFC Type 4 (DESFire or similar)\n`;
+                        } else {
+                            messageContent += `Type: Unknown format\n`;
+                        }
+                    }
+
+                    // Calculate total data size
+                    let totalBytes = 0;
+                    message.records.forEach(record => {
+                        totalBytes += record.data.byteLength;
+                        if (record.recordType) totalBytes += record.recordType.length;
+                        if (record.mediaType) totalBytes += record.mediaType.length;
+                        if (record.lang) totalBytes += record.lang.length;
+                        // Add overhead for NDEF headers
+                        totalBytes += 8;
+                    });
+
+                    messageContent += `Current Data Size: ${totalBytes} bytes\n\n`;
+
+                    // Add memory estimation based on common tag types
+                    messageContent += `Estimated Memory:\n`;
+                    if (serialNumber.length === 14) {
+                        messageContent += `NTAG213: 144 bytes\n`;
+                        messageContent += `NTAG215: 504 bytes\n`;
+                        messageContent += `NTAG216: 888 bytes\n`;
+                    } else {
+                        messageContent += `Unknown tag type - memory size cannot be determined\n`;
+                    }
+                    
+                    messageContent += `\nRecords (${message.records.length}):\n`;
+                    
+                    if (message.records.length === 0) {
+                        messageContent += `No records found (empty or non-NDEF tag)\n`;
+                    } else {
+                        message.records.forEach((record, index) => {
+                            const textDecoder = new TextDecoder();
+                            let decodedData;
+                            try {
+                                decodedData = textDecoder.decode(record.data);
+                            } catch (e) {
+                                decodedData = `[Binary Data: ${record.data.byteLength} bytes]`;
+                            }
+
+                            messageContent += `\nRecord ${index + 1}:\n`;
+                            messageContent += `Type: ${record.recordType}\n`;
+                            messageContent += `Size: ${record.data.byteLength} bytes\n`;
+                            messageContent += `Data: ${decodedData}\n`;
+                        });
+                    }
+
+                    showMessage(messageContent);
+                    updateStatus('Tag read successfully');
+                });
+
+            } catch (error) {
+                showError(`Error starting NFC reader: ${error.message}`);
+                updateStatus('Failed to start NFC reader');
+            }
+        }
+
+        let isWriting = false;
+        let writeTimeout;
+
+        async function writeSmartPoster() {
+            if (isWriting) {
+                showMessage('Write operation already in progress. Please wait...');
+                return;
+            }
+
+            const title = document.getElementById('title').value;
+            const desc = document.getElementById('desc').value;
+            const url = document.getElementById('url').value;
+
+            if (!title || !url) {
+                showError('Please fill in title and URL');
+                return;
+            }
+
+            // Calculate approximate size
+            const urlSize = new TextEncoder().encode(url).length;
+            const titleSize = new TextEncoder().encode(title).length;
+            const descSize = desc ? new TextEncoder().encode(desc).length : 0;
+            
+            // Add NDEF overhead (approximately 5-7 bytes per record)
+            const totalSize = urlSize + titleSize + descSize + (desc ? 21 : 14);
+
+            if (totalSize > 33) {
+                showError(`Data too large for tag (${totalSize} bytes needed, 33 bytes available).\n\n` +
+                         `Current sizes:\n` +
+                         `URL: ${urlSize} bytes\n` +
+                         `Title: ${titleSize} bytes\n` +
+                         `Description: ${descSize} bytes\n\n` +
+                         `Please reduce text length or remove description.`);
+                return;
+            }
+
+            try {
+                isWriting = true;
+                const ndef = new NDEFReader();
+                showMessage('Hold your device steady against the NFC tag...');
+                updateStatus('Waiting for NFC tag...');
+
+                // Create minimal record set
+                const records = [
+                    { recordType: "url", data: url }
+                ];
+                
+                // Only add title if there's space
+                if ((urlSize + titleSize + 14) <= 33) {
+                    records.push({ recordType: "text", data: title, lang: "en" });
+                }
+
+                await ndef.write({ records });
+
+                showMessage('Successfully wrote to NFC tag!');
+                updateStatus('Write operation completed');
+                writeForm.classList.add('hidden');
+
+            } catch (error) {
+                let errorMessage = 'Error writing to NFC: ';
+                
+                if (error.message.includes('IO error')) {
+                    errorMessage += 'Could not write to tag. Please try again, keeping the tag still against the phone.';
+                } else if (error.message.includes('cancelled')) {
+                    errorMessage += 'Write operation was interrupted. Please try again.';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showError(errorMessage);
+                updateStatus('Write failed');
+
+            } finally {
+                isWriting = false;
+            }
+        }
+
+        async function eraseTag() {
+            try {
+                const ndef = new NDEFReader();
+                showMessage('Hold your device near the NFC tag to erase...');
+                updateStatus('Waiting for tag...');
+
+                // Write an empty NDEF message to effectively erase the tag
+                await ndef.write({
+                    records: []
+                });
+
+                showMessage('Successfully erased NFC tag!');
+                updateStatus('Erase completed');
+
+            } catch (error) {
+                let errorMessage = 'Error erasing tag: ';
+                if (error.message.includes('IO error')) {
+                    errorMessage += 'Could not erase tag. Possible causes:\n' +
+                        '- Tag was moved during operation\n' +
+                        '- Tag is read-only or locked\n\n' +
+                        'Please try again, keeping the tag still against the phone.';
+                } else {
+                    errorMessage += error.message;
+                }
+                showError(errorMessage);
+                updateStatus('Erase failed');
+            }
+        }
+
+        function updateUrlSize() {
+            const url = document.getElementById('url').value;
+            const urlSize = new TextEncoder().encode(url).length;
+            const urlSizeDiv = document.getElementById('urlSize');
+            urlSizeDiv.textContent = `URL size: ${urlSize} bytes${urlSize > 25 ? ' (Consider shortening)' : ''}`;
+            urlSizeDiv.style.color = urlSize > 25 ? '#dc3545' : '#666';
+        }
+
+        async function shortenUrl() {
+            const longUrl = document.getElementById('url').value;
+            const urlInput = document.getElementById('url');
+            const shortenButton = document.getElementById('shortenUrl');
+            
+            try {
+                shortenButton.disabled = true;
+                shortenButton.textContent = 'Shortening...';
+                
+                // Using TinyURL API (no key required)
+                const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+                if (!response.ok) throw new Error('Failed to shorten URL');
+                
+                const shortUrl = await response.text();
+                urlInput.value = shortUrl;
+                updateUrlSize();
+                
+                showMessage(`URL shortened successfully!\nOriginal size: ${new TextEncoder().encode(longUrl).length} bytes\nNew size: ${new TextEncoder().encode(shortUrl).length} bytes`);
+            } catch (error) {
+                showError(`Error shortening URL: ${error.message}\nTry a different URL shortening service or manually shorten the URL.`);
+            } finally {
+                shortenButton.disabled = false;
+                shortenButton.textContent = 'Shorten URL';
+            }
+        }
+
+        // Event Listeners
+        readButton.addEventListener('click', startNFCReader);
+        writeButton.addEventListener('click', () => {
+            writeForm.classList.remove('hidden');
+            messageDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+            updateUrlSize();
+        });
+        eraseButton.addEventListener('click', eraseTag);
+        confirmWriteButton.addEventListener('click', writeSmartPoster);
+        document.getElementById('shortenUrl').addEventListener('click', shortenUrl);
+        document.getElementById('url').addEventListener('input', updateUrlSize);
+    </script>
+</body>
+</html>
