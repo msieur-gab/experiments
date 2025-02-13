@@ -66,6 +66,7 @@
             border-radius: 4px;
             margin-bottom: 15px;
             white-space: pre-wrap;
+            word-break: break-all;
         }
 
         .error {
@@ -79,10 +80,18 @@
         #status {
             margin-top: 20px;
             text-align: center;
+            color: #666;
         }
 
         .hidden {
             display: none;
+        }
+
+        #rawData {
+            margin-top: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            overflow-wrap: break-word;
         }
     </style>
 </head>
@@ -99,6 +108,7 @@
         
         <div id="message" class="message hidden"></div>
         <div id="error" class="error hidden"></div>
+        <div id="rawData" class="hidden"></div>
         
         <div id="status"></div>
     </div>
@@ -111,10 +121,13 @@
         const messageDiv = document.getElementById('message');
         const errorDiv = document.getElementById('error');
         const statusDiv = document.getElementById('status');
+        const rawDataDiv = document.getElementById('rawData');
+
+        let ndefReader = null;
 
         // Check for NFC support
         if (!('NDEFReader' in window)) {
-            showError('Web NFC is not supported in this browser');
+            showError('Web NFC is not supported in this browser. Please use Chrome for Android.');
             readButton.disabled = true;
             writeButton.disabled = true;
         }
@@ -129,50 +142,106 @@
         function showError(text) {
             errorDiv.textContent = text;
             errorDiv.classList.remove('hidden');
-            messageDiv.classList.add('hidden');
+        }
+
+        function showRawData(data) {
+            rawDataDiv.textContent = JSON.stringify(data, null, 2);
+            rawDataDiv.classList.remove('hidden');
         }
 
         function updateStatus(text) {
             statusDiv.textContent = text;
         }
 
-        // Read NFC
-        readButton.addEventListener('click', async () => {
+        async function decodeNFCRecord(record) {
+            let recordContent = '';
+            
             try {
-                showMessage('Scanning for NFC tags...');
-                const ndef = new NDEFReader();
-                
-                await ndef.scan();
-                updateStatus('Scanning for NFC tags...');
-
-                ndef.addEventListener("reading", ({ message, serialNumber }) => {
-                    let messageContent = `Tag ID: ${serialNumber}\n\n`;
+                switch (record.recordType) {
+                    case "text":
+                        const textDecoder = new TextDecoder(record.encoding || 'utf-8');
+                        const text = textDecoder.decode(record.data);
+                        recordContent = `Text: ${text}`;
+                        break;
                     
-                    for (const record of message.records) {
-                        messageContent += `Record type: ${record.recordType}\n`;
-                        
-                        if (record.recordType === "text") {
-                            const textDecoder = new TextDecoder();
-                            const text = textDecoder.decode(record.data);
-                            messageContent += `Content: ${text}\n`;
+                    case "url":
+                        const urlDecoder = new TextDecoder();
+                        const url = urlDecoder.decode(record.data);
+                        recordContent = `URL: ${url}`;
+                        break;
+                    
+                    case "mime":
+                        const mimeDecoder = new TextDecoder();
+                        const mimeContent = mimeDecoder.decode(record.data);
+                        recordContent = `MIME content: ${record.mediaType}\nData: ${mimeContent}`;
+                        break;
+                    
+                    default:
+                        const decoder = new TextDecoder();
+                        try {
+                            const data = decoder.decode(record.data);
+                            recordContent = `Type: ${record.recordType}\nData: ${data}`;
+                        } catch (e) {
+                            recordContent = `Type: ${record.recordType}\nBinary data length: ${record.data.byteLength} bytes`;
                         }
+                }
+            } catch (error) {
+                recordContent = `Error decoding record: ${error.message}`;
+            }
+            
+            return recordContent;
+        }
+
+        // Read NFC
+        async function startNFCReader() {
+            try {
+                // Create new reader instance
+                ndefReader = new NDEFReader();
+                
+                // Request permission and start scanning
+                await ndefReader.scan();
+                showMessage('NFC scan started. Bring a tag close to your device...');
+                updateStatus('Actively scanning...');
+
+                // Error handler
+                ndefReader.addEventListener("error", (error) => {
+                    showError(`NFC Error: ${error.message}`);
+                    updateStatus('Error occurred');
+                });
+
+                // Reading handler
+                ndefReader.addEventListener("reading", async ({ message, serialNumber }) => {
+                    try {
+                        let messageContent = `Tag ID: ${serialNumber}\n\n`;
+                        
+                        // Show raw data for debugging
+                        showRawData(message);
+                        
+                        // Process each record
+                        for (const record of message.records) {
+                            const decodedContent = await decodeNFCRecord(record);
+                            messageContent += `${decodedContent}\n\n`;
+                        }
+                        
+                        showMessage(messageContent);
+                        updateStatus('Tag read successfully');
+                    } catch (error) {
+                        showError(`Error processing tag: ${error.message}`);
+                        updateStatus('Error processing tag');
                     }
-                    
-                    showMessage(messageContent);
-                    updateStatus('Tag read successfully');
                 });
 
             } catch (error) {
-                showError(`Error reading NFC: ${error.message}`);
-                updateStatus('Error occurred while reading');
+                showError(`Error starting NFC reader: ${error.message}`);
+                updateStatus('Failed to start NFC reader');
             }
-        });
+        }
 
         // Write NFC
-        writeButton.addEventListener('click', async () => {
+        async function writeNFCTag() {
             try {
-                showMessage('Hold your device near an NFC tag to write...');
                 const ndef = new NDEFReader();
+                showMessage('Hold your device near an NFC tag to write...');
                 
                 await ndef.write({
                     records: [{
@@ -188,6 +257,22 @@
             } catch (error) {
                 showError(`Error writing to NFC: ${error.message}`);
                 updateStatus('Error occurred while writing');
+            }
+        }
+
+        // Event Listeners
+        readButton.addEventListener('click', startNFCReader);
+        writeButton.addEventListener('click', writeNFCTag);
+
+        // Cleanup function
+        window.addEventListener('beforeunload', () => {
+            if (ndefReader) {
+                // Attempt to stop scanning
+                try {
+                    ndefReader = null;
+                } catch (error) {
+                    console.error('Error cleaning up NFC reader:', error);
+                }
             }
         });
     </script>
