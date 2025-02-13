@@ -3,100 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Wallet NFC Writer</title>
+    <title>NFC Reader/Writer</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 20px; }
         .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); max-width: 500px; margin: auto; padding: 20px; }
         .card-title { font-size: 24px; text-align: center; margin-bottom: 20px; }
-        .preview { 
-            background: #f8f9fa; 
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
-            border: 1px solid #ddd;
-        }
-        .preview-title {
-            font-size: 18px;
-            color: #1a73e8;
-            margin-bottom: 10px;
-        }
-        .preview-desc {
-            color: #5f6368;
-            margin-bottom: 15px;
-        }
-        .preview-button {
-            background: #1a73e8;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 4px;
-            display: inline-block;
-            font-size: 14px;
-        }
+        .tabs { display: flex; margin-bottom: 20px; }
+        .tab { flex: 1; padding: 10px; text-align: center; background: #f8f9fa; cursor: pointer; }
+        .tab.active { background: #007bff; color: white; }
+        .tab:first-child { border-radius: 4px 0 0 4px; }
+        .tab:last-child { border-radius: 0 4px 4px 0; }
         .input-group { margin-bottom: 15px; }
         .input-group label { display: block; margin-bottom: 5px; color: #444; }
-        .input-group input, .input-group textarea { 
-            width: 100%; 
-            padding: 8px; 
-            border: 1px solid #ddd; 
-            border-radius: 4px; 
-            font-size: 16px; 
-        }
-        .input-group textarea { 
-            resize: vertical; 
-            min-height: 80px; 
-        }
-        button { 
-            width: 100%; 
-            padding: 12px; 
-            border: none; 
-            border-radius: 4px; 
-            background: #1a73e8; 
-            color: white; 
-            cursor: pointer; 
-            font-size: 16px; 
-            transition: 0.2s; 
-            margin-bottom: 10px; 
-        }
-        button:hover { background: #1557b0; }
-        .message, .error { padding: 15px; border-radius: 4px; margin-bottom: 15px; }
-        .message { background: #e6f4ea; color: #1e8e3e; }
-        .error { background: #fce8e6; color: #d93025; }
-        #status { margin-top: 20px; text-align: center; color: #5f6368; }
+        .input-group input, .input-group textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 16px; }
+        .input-group textarea { resize: vertical; min-height: 80px; }
+        .button-container { display: flex; gap: 10px; margin-bottom: 15px; }
+        button { flex: 1; padding: 12px; border: none; border-radius: 4px; background: #007bff; color: white; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #cccccc; cursor: not-allowed; }
+        .message, .error { padding: 15px; border-radius: 4px; margin-bottom: 15px; white-space: pre-wrap; word-break: break-word; }
+        .message { background: #f8f9fa; }
+        .error { background: #fff3f3; color: #dc3545; }
+        #status { margin-top: 20px; text-align: center; color: #666; }
         .hidden { display: none; }
+        .form-section { display: none; }
+        .form-section.active { display: block; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h1 class="card-title">Google Wallet NFC Writer</h1>
-
-        <div class="input-group">
-            <label for="title">Title*</label>
-            <input type="text" id="title" required 
-                value="Gabriel Baude"
-                oninput="updatePreview()">
-        </div>
-        <div class="input-group">
-            <label for="desc">Description</label>
-            <textarea id="desc" 
-                oninput="updatePreview()">Innovation and design leader
-Email: baude.gabriel@gmail.com</textarea>
-        </div>
-        <div class="input-group">
-            <label for="url">Profile URL*</label>
-            <input type="url" id="url" required 
-                value="https://www.linkedin.com/in/gabrielbaude/"
-                oninput="updatePreview()">
-        </div>
-
-        <div class="preview">
-            <div class="preview-title" id="previewTitle">Gabriel Baude</div>
-            <div class="preview-desc" id="previewDesc">Innovation and design leader
-Email: baude.gabriel@gmail.com</div>
-            <div class="preview-button">View Profile</div>
-        </div>
+        <h1 class="card-title">NFC Reader/Writer</h1>
         
-        <button id="writeButton">Write to NFC Tag</button>
+        <div class="button-container">
+            <button id="readButton">Read NFC</button>
+            <button id="writeButton">Write NFC</button>
+        </div>
+
+        <div id="writeForm" class="hidden">
+            <div class="input-group">
+                <label for="title">Title*</label>
+                <input type="text" id="title" value="Gabriel Baude">
+            </div>
+            <div class="input-group">
+                <label for="desc">Description</label>
+                <textarea id="desc">Innovation and design leader
+Email: baude.gabriel@gmail.com</textarea>
+            </div>
+            <div class="input-group">
+                <label for="url">Profile URL*</label>
+                <input type="url" id="url" value="https://www.linkedin.com/in/gabrielbaude/">
+            </div>
+            <button id="confirmWrite">Write Smart Poster</button>
+        </div>
         
         <div id="message" class="message hidden"></div>
         <div id="error" class="error hidden"></div>
@@ -104,16 +63,21 @@ Email: baude.gabriel@gmail.com</div>
     </div>
 
     <script>
+        const readButton = document.getElementById('readButton');
         const writeButton = document.getElementById('writeButton');
+        const confirmWriteButton = document.getElementById('confirmWrite');
+        const writeForm = document.getElementById('writeForm');
         const messageDiv = document.getElementById('message');
         const errorDiv = document.getElementById('error');
         const statusDiv = document.getElementById('status');
 
-        function updatePreview() {
-            document.getElementById('previewTitle').textContent = 
-                document.getElementById('title').value || 'Title Preview';
-            document.getElementById('previewDesc').textContent = 
-                document.getElementById('desc').value || 'Description Preview';
+        let ndefReader = null;
+
+        // Check for Web NFC API Support
+        if (!('NDEFReader' in window)) {
+            showError('Web NFC is not supported in this browser. Please use Chrome for Android.');
+            readButton.disabled = true;
+            writeButton.disabled = true;
         }
 
         function showMessage(text) {
@@ -132,13 +96,59 @@ Email: baude.gabriel@gmail.com</div>
             statusDiv.textContent = text;
         }
 
-        async function writeNFCTag() {
+        async function startNFCReader() {
+            try {
+                writeForm.classList.add('hidden');
+                ndefReader = new NDEFReader();
+                await ndefReader.scan();
+
+                showMessage('NFC scan started. Bring a tag close...');
+                updateStatus('Scanning...');
+
+                ndefReader.addEventListener("error", (event) => {
+                    showError(`NFC Error: ${event.message}`);
+                    updateStatus('Error reading tag');
+                });
+
+                ndefReader.addEventListener("reading", ({ message, serialNumber }) => {
+                    showMessage(`Tag detected! Processing...`);
+                    updateStatus(`Tag ID: ${serialNumber}`);
+
+                    if (message.records.length === 0) {
+                        showMessage(`Tag detected (ID: ${serialNumber}), but contains no readable data.`);
+                        return;
+                    }
+
+                    let messageContent = `Tag ID: ${serialNumber}\n\n`;
+                    message.records.forEach((record, index) => {
+                        const textDecoder = new TextDecoder();
+                        let decodedData;
+                        try {
+                            decodedData = textDecoder.decode(record.data);
+                        } catch (e) {
+                            decodedData = `[Binary Data: ${record.data.byteLength} bytes]`;
+                        }
+
+                        messageContent += `Record ${index + 1}:\nType: ${record.recordType}\nData: ${decodedData}\n\n`;
+                    });
+
+                    showMessage(messageContent);
+                    updateStatus('Tag read successfully');
+                });
+
+            } catch (error) {
+                showError(`Error starting NFC reader: ${error.message}`);
+                updateStatus('Failed to start NFC reader');
+            }
+        }
+
+        async function writeSmartPoster() {
             const title = document.getElementById('title').value;
             const desc = document.getElementById('desc').value;
             const url = document.getElementById('url').value;
 
             if (!title || !url) {
-                showError('Please fill in all required fields');
+                showError('Please fill in title and URL');
                 return;
             }
 
@@ -147,7 +157,7 @@ Email: baude.gabriel@gmail.com</div>
                 showMessage('Hold your device near an NFC tag to write...');
                 updateStatus('Waiting for NFC tag...');
 
-                // Create records optimized for Google Wallet
+                const textEncoder = new TextEncoder();
                 await ndef.write({
                     records: [
                         {
@@ -156,33 +166,39 @@ Email: baude.gabriel@gmail.com</div>
                         },
                         {
                             recordType: "text",
-                            data: title,
+                            data: textEncoder.encode(title),
                             lang: "en"
                         },
                         {
                             recordType: "text",
-                            data: desc,
+                            data: textEncoder.encode(desc),
                             lang: "en"
                         },
                         {
-                            // Android Application Record for Google Wallet
-                            recordType: "android.com:pkg",
-                            data: "com.google.android.apps.walletnfcrel"
+                            recordType: "external",
+                            data: textEncoder.encode("com.google.android.apps.walletnfcrel")
                         }
                     ]
                 });
 
-                showMessage('Successfully wrote to NFC tag!');
-                updateStatus('Write completed');
+                showMessage('Successfully wrote Smart Poster to NFC tag!');
+                updateStatus('Write operation completed');
+                writeForm.classList.add('hidden');
 
             } catch (error) {
                 showError(`Error writing to NFC: ${error.message}`);
-                updateStatus('Write failed');
+                updateStatus('Error occurred while writing');
             }
         }
 
-        writeButton.addEventListener('click', writeNFCTag);
-        updatePreview(); // Initial preview update
+        // Event Listeners
+        readButton.addEventListener('click', startNFCReader);
+        writeButton.addEventListener('click', () => {
+            writeForm.classList.remove('hidden');
+            messageDiv.classList.add('hidden');
+            errorDiv.classList.add('hidden');
+        });
+        confirmWriteButton.addEventListener('click', writeSmartPoster);
     </script>
 </body>
 </html>
