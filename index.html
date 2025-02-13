@@ -12,7 +12,7 @@
         button { flex: 1; padding: 12px; border: none; border-radius: 4px; background: #007bff; color: white; cursor: pointer; font-size: 16px; transition: 0.2s; }
         button:hover { background: #0056b3; }
         button:disabled { background: #cccccc; cursor: not-allowed; }
-        .message, .error { padding: 15px; border-radius: 4px; margin-bottom: 15px; white-space: pre-wrap; word-break: break-all; }
+        .message, .error { padding: 15px; border-radius: 4px; margin-bottom: 15px; white-space: pre-wrap; word-break: break-word; }
         .message { background: #f8f9fa; }
         .error { background: #fff3f3; color: #dc3545; }
         #status { margin-top: 20px; text-align: center; color: #666; }
@@ -33,7 +33,6 @@
     </div>
 
     <script>
-        // DOM Elements
         const readButton = document.getElementById('readButton');
         const writeButton = document.getElementById('writeButton');
         const messageDiv = document.getElementById('message');
@@ -42,14 +41,13 @@
 
         let ndefReader = null;
 
-        // Check if NFC API is supported
+        // Check for Web NFC API Support
         if (!('NDEFReader' in window)) {
             showError('Web NFC is not supported in this browser. Please use Chrome for Android.');
             readButton.disabled = true;
             writeButton.disabled = true;
         }
 
-        // Helper Functions
         function showMessage(text) {
             messageDiv.textContent = text;
             messageDiv.classList.remove('hidden');
@@ -66,30 +64,40 @@
             statusDiv.textContent = text;
         }
 
-        // Read NFC Tag
         async function startNFCReader() {
             try {
                 ndefReader = new NDEFReader();
-                await ndefReader.scan();  // Requests permission
-                
-                showMessage('NFC scan started. Bring a tag close...');
-                updateStatus('Scanning for NFC tag...');
+                await ndefReader.scan();
 
-                // Error Handling
+                showMessage('NFC scan started. Bring a tag close...');
+                updateStatus('Scanning...');
+
                 ndefReader.addEventListener("error", (event) => {
                     showError(`NFC Error: ${event.message}`);
-                    updateStatus('Error occurred while reading');
+                    updateStatus('Error reading tag');
                 });
 
-                // Reading NFC Tag
                 ndefReader.addEventListener("reading", ({ message, serialNumber }) => {
-                    let messageContent = `Tag ID: ${serialNumber}\n\n`;
+                    showMessage(`Tag detected! Processing...`);
+                    updateStatus(`Tag ID: ${serialNumber}`);
 
-                    for (const record of message.records) {
-                        const textDecoder = new TextDecoder();
-                        let data = textDecoder.decode(record.data);
-                        messageContent += `Record Type: ${record.recordType}\nData: ${data}\n\n`;
+                    if (message.records.length === 0) {
+                        showMessage(`Tag detected (ID: ${serialNumber}), but contains no readable data.`);
+                        return;
                     }
+
+                    let messageContent = `Tag ID: ${serialNumber}\n\n`;
+                    message.records.forEach((record, index) => {
+                        const textDecoder = new TextDecoder();
+                        let decodedData;
+                        try {
+                            decodedData = textDecoder.decode(record.data);
+                        } catch (e) {
+                            decodedData = `[Binary Data: ${record.data.byteLength} bytes]`;
+                        }
+
+                        messageContent += `Record ${index + 1}:\nType: ${record.recordType}\nData: ${decodedData}\n\n`;
+                    });
 
                     showMessage(messageContent);
                     updateStatus('Tag read successfully');
@@ -101,11 +109,9 @@
             }
         }
 
-        // Write NFC Tag
         async function writeNFCTag() {
             try {
                 const ndef = new NDEFReader();
-                
                 showMessage('Hold your device near an NFC tag to write...');
                 updateStatus('Waiting for NFC tag...');
 
@@ -122,7 +128,6 @@
             }
         }
 
-        // Event Listeners
         readButton.addEventListener('click', startNFCReader);
         writeButton.addEventListener('click', writeNFCTag);
     </script>
