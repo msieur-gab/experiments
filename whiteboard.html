@@ -49,6 +49,30 @@
             padding: 0.5rem;
             border-radius: 4px;
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .connect-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .connect-btn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        .connect-btn:active {
+            transform: translateY(0);
         }
 
         .canvas-container {
@@ -146,6 +170,56 @@
             color: #007bff;
             margin: 0.5rem 0;
         }
+
+        /* Sticky notes styles */
+        .sticky-note {
+            position: absolute;
+            min-width: 150px;
+            max-width: 250px;
+            padding: 1rem;
+            background: #fefcbf;
+            color: #333;
+            border-radius: 4px;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+            cursor: move;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            z-index: 10;
+            user-select: none;
+            transition: transform 0.2s ease;
+        }
+
+        .sticky-note:hover {
+            transform: scale(1.02);
+            z-index: 20;
+        }
+
+        .sticky-note.dragging {
+            transform: scale(1.05);
+            z-index: 30;
+            box-shadow: 5px 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .sticky-note .close-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #dc3545;
+            color: white;
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+        }
+
+        .sticky-note:hover .close-btn {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -157,6 +231,7 @@
         </div>
         <div class="room-info">
             Room: <span id="roomCode">-</span>
+            <button class="connect-btn" id="connectBtn" onclick="showConnectionModal()">📱 Connect Remote</button>
         </div>
     </div>
 
@@ -204,6 +279,11 @@
                 this.peerConnection = null;
                 this.dataChannel = null;
                 this.roomCode = this.generateRoomCode();
+                
+                // Sticky notes management
+                this.stickyNotes = [];
+                this.draggedNote = null;
+                this.dragOffset = { x: 0, y: 0 };
                 
                 this.initCanvas();
                 this.initTools();
@@ -344,7 +424,7 @@
                 try {
                     // Initialize PeerJS (acts as the host/receiver)
                     this.peer = new Peer(this.roomCode, {
-                        host: 'peerjs-server.herokuapp.com',
+                        host: '0.peerjs.com',
                         port: 443,
                         secure: true,
                         path: '/'
@@ -498,7 +578,107 @@
                         // In real app, you'd maintain drawing history
                         console.log('Undo requested (not implemented in POC)');
                         break;
+                        
+                    case 'addSticky':
+                        // Add sticky note from mobile
+                        this.createStickyNote(action.text, action.color, action.x, action.y);
+                        break;
                 }
+            }
+
+            createStickyNote(text, color, x, y) {
+                const canvasRect = this.canvas.getBoundingClientRect();
+                const noteX = x * canvasRect.width;
+                const noteY = y * canvasRect.height;
+                
+                const stickyNote = document.createElement('div');
+                stickyNote.className = 'sticky-note';
+                stickyNote.style.left = noteX + 'px';
+                stickyNote.style.top = noteY + 'px';
+                stickyNote.style.backgroundColor = color || '#fefcbf';
+                stickyNote.textContent = text;
+                
+                // Add close button
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'close-btn';
+                closeBtn.textContent = '×';
+                closeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    this.removeStickyNote(stickyNote);
+                };
+                stickyNote.appendChild(closeBtn);
+                
+                // Add drag functionality
+                this.makeDraggable(stickyNote);
+                
+                // Add to container and track it
+                document.querySelector('.canvas-container').appendChild(stickyNote);
+                this.stickyNotes.push(stickyNote);
+            }
+
+            makeDraggable(element) {
+                let isDragging = false;
+                let startX, startY;
+                
+                element.addEventListener('mousedown', (e) => {
+                    if (e.target.classList.contains('close-btn')) return;
+                    
+                    isDragging = true;
+                    element.classList.add('dragging');
+                    
+                    startX = e.clientX - element.offsetLeft;
+                    startY = e.clientY - element.offsetTop;
+                    
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+                
+                const onMouseMove = (e) => {
+                    if (!isDragging) return;
+                    
+                    element.style.left = (e.clientX - startX) + 'px';
+                    element.style.top = (e.clientY - startY) + 'px';
+                };
+                
+                const onMouseUp = () => {
+                    isDragging = false;
+                    element.classList.remove('dragging');
+                    
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                };
+                
+                // Touch events for mobile
+                element.addEventListener('touchstart', (e) => {
+                    if (e.target.classList.contains('close-btn')) return;
+                    
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    isDragging = true;
+                    element.classList.add('dragging');
+                    
+                    startX = touch.clientX - element.offsetLeft;
+                    startY = touch.clientY - element.offsetTop;
+                });
+                
+                element.addEventListener('touchmove', (e) => {
+                    if (!isDragging) return;
+                    e.preventDefault();
+                    
+                    const touch = e.touches[0];
+                    element.style.left = (touch.clientX - startX) + 'px';
+                    element.style.top = (touch.clientY - startY) + 'px';
+                });
+                
+                element.addEventListener('touchend', () => {
+                    isDragging = false;
+                    element.classList.remove('dragging');
+                });
+            }
+
+            removeStickyNote(element) {
+                element.remove();
+                this.stickyNotes = this.stickyNotes.filter(note => note !== element);
             }
 
             showConnectionModal() {
@@ -554,8 +734,15 @@
             document.getElementById('connectionModal').classList.add('hidden');
         }
 
+        function showConnectionModal() {
+            if (window.whiteboard) {
+                window.whiteboard.showConnectionModal();
+            }
+        }
+
         // Initialize whiteboard
         const whiteboard = new WhiteboardHost();
+        window.whiteboard = whiteboard; // Make it globally accessible
     </script>
 </body>
 </html>

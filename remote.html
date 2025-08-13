@@ -191,6 +191,63 @@
             margin-bottom: 1rem;
             font-family: monospace;
         }
+
+        /* Sticky note input styles */
+        .text-input-section {
+            background: #2c2c2c;
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .sticky-textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 1rem;
+            background: #1a1a1a;
+            color: white;
+            border: 2px solid #444;
+            border-radius: 8px;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 1rem;
+            resize: vertical;
+            margin-bottom: 1rem;
+        }
+
+        .sticky-textarea:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .input-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .add-sticky-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex: 1;
+        }
+
+        .add-sticky-btn:active {
+            transform: scale(0.98);
+            background: #218838;
+        }
+
+        .color-preview {
+            width: 40px;
+            height: 40px;
+            border: 3px solid white;
+            border-radius: 50%;
+            background-color: #000000;
+        }
     </style>
 </head>
 <body>
@@ -238,10 +295,13 @@
     </div>
 
     <div class="control-section">
-        <div class="section-title">Gesture Drawing</div>
-        <div class="gesture-area" id="gestureArea">
-            <div>Draw here with your finger to control the whiteboard</div>
-            <div class="gesture-feedback" id="gestureFeedback">✨</div>
+        <div class="section-title">Add Sticky Notes</div>
+        <div class="text-input-section">
+            <textarea id="stickyText" class="sticky-textarea" placeholder="Type your note here..." maxlength="200"></textarea>
+            <div class="input-actions">
+                <button class="add-sticky-btn" id="addStickyBtn">📝 Add Sticky Note</button>
+                <div class="color-preview" id="colorPreview"></div>
+            </div>
         </div>
     </div>
 
@@ -268,6 +328,12 @@
                 this.initConnection();
                 this.initControls();
                 this.initGestures();
+                this.initColorPreview();
+            }
+
+            initColorPreview() {
+                // Set initial color preview
+                document.getElementById('colorPreview').style.backgroundColor = this.currentColor;
             }
 
             getRoomCodeFromUrl() {
@@ -281,7 +347,7 @@
                 try {
                     // Initialize PeerJS (connects to the whiteboard)
                     this.peer = new Peer(null, {
-                        host: 'peerjs-server.herokuapp.com',
+                        host: '0.peerjs.com',
                         port: 443,
                         secure: true,
                         path: '/'
@@ -387,6 +453,10 @@
                         document.querySelector('.color-button.active').classList.remove('active');
                         e.target.classList.add('active');
                         this.currentColor = e.target.dataset.color;
+                        
+                        // Update color preview
+                        document.getElementById('colorPreview').style.backgroundColor = this.currentColor;
+                        
                         this.sendAction({
                             type: 'colorChange',
                             color: this.currentColor
@@ -406,6 +476,25 @@
                     this.sendAction({ type: 'undo' });
                     this.showGestureFeedback('↶');
                     this.hapticFeedback();
+                });
+
+                // Sticky note button
+                document.getElementById('addStickyBtn').addEventListener('click', () => {
+                    const text = document.getElementById('stickyText').value.trim();
+                    if (text) {
+                        this.sendAction({
+                            type: 'addSticky',
+                            text: text,
+                            color: this.currentColor,
+                            x: Math.random() * 0.8 + 0.1, // Random position 10-90%
+                            y: Math.random() * 0.8 + 0.1
+                        });
+                        
+                        // Clear the textarea
+                        document.getElementById('stickyText').value = '';
+                        this.showGestureFeedback('📝');
+                        this.hapticFeedback();
+                    }
                 });
             }
 
