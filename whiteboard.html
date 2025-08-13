@@ -385,8 +385,59 @@
                 const action = data.action;
                 console.log('Remote action:', action);
                 
-                // Handle remote drawing commands here
-                // For POC, just log them
+                // Handle remote drawing commands
+                switch (action.type) {
+                    case 'toolChange':
+                        this.currentTool = action.tool;
+                        break;
+                        
+                    case 'colorChange':
+                        this.currentColor = action.color;
+                        break;
+                        
+                    case 'clear':
+                        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                        break;
+                        
+                    case 'gestureStart':
+                        // Start drawing from mobile gesture (relative coordinates)
+                        const startX = action.x * this.canvas.width;
+                        const startY = action.y * this.canvas.height;
+                        
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(startX, startY);
+                        this.ctx.lineWidth = this.lineWidth;
+                        this.ctx.strokeStyle = action.tool === 'eraser' ? '#ffffff' : (action.color || this.currentColor);
+                        this.ctx.lineCap = 'round';
+                        this.ctx.lineJoin = 'round';
+                        
+                        this.lastRemotePos = { x: startX, y: startY };
+                        break;
+                        
+                    case 'gestureDraw':
+                        // Continue drawing from mobile gesture
+                        if (this.lastRemotePos) {
+                            const drawX = action.x * this.canvas.width;
+                            const drawY = action.y * this.canvas.height;
+                            
+                            this.ctx.lineTo(drawX, drawY);
+                            this.ctx.stroke();
+                            
+                            this.lastRemotePos = { x: drawX, y: drawY };
+                        }
+                        break;
+                        
+                    case 'gestureEnd':
+                        // Finish drawing from mobile gesture
+                        this.lastRemotePos = null;
+                        break;
+                        
+                    case 'undo':
+                        // Simple undo - just clear for POC
+                        // In real app, you'd maintain drawing history
+                        console.log('Undo requested (not implemented in POC)');
+                        break;
+                }
             }
 
             showConnectionModal() {
