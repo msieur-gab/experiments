@@ -187,9 +187,8 @@
     <!-- QR Code generator that definitely works -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <!-- PeerJS for easy WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
     
     <script>
         class WhiteboardHost {
@@ -342,38 +341,53 @@
             initWebRTC() {
                 document.getElementById('roomCode').textContent = this.roomCode;
                 
-                // Initialize Firebase for cross-device communication
-                const firebaseConfig = {
-                    apiKey: "AIzaSyDummy-Key-For-POC-Testing-Only",
-                    authDomain: "whiteboard-poc.firebaseapp.com",
-                    databaseURL: "https://whiteboard-poc-default-rtdb.firebaseio.com/",
-                    projectId: "whiteboard-poc"
-                };
-                
                 try {
-                    // Initialize Firebase
-                    firebase.initializeApp(firebaseConfig);
-                    this.database = firebase.database();
-                    this.roomRef = this.database.ref(`rooms/${this.roomCode}/actions`);
+                    // Initialize PeerJS (acts as the host/receiver)
+                    this.peer = new Peer(this.roomCode, {
+                        host: 'peerjs-server.herokuapp.com',
+                        port: 443,
+                        secure: true,
+                        path: '/'
+                    });
                     
-                    // Listen for remote actions
-                    this.roomRef.on('child_added', (snapshot) => {
-                        const data = snapshot.val();
-                        if (data && data.source !== 'whiteboard') {
+                    this.connections = [];
+                    
+                    this.peer.on('open', (id) => {
+                        console.log('Whiteboard peer opened with ID:', id);
+                        this.updateConnectionStatus(false); // Waiting for connection
+                    });
+                    
+                    this.peer.on('connection', (conn) => {
+                        console.log('Remote connected:', conn.peer);
+                        this.connections.push(conn);
+                        
+                        conn.on('open', () => {
+                            console.log('Data connection opened');
+                            this.updateConnectionStatus(true);
+                        });
+                        
+                        conn.on('data', (data) => {
                             this.handleRemoteAction({
                                 type: 'remote-action',
                                 action: data.action,
                                 timestamp: data.timestamp
                             });
-                        }
+                        });
+                        
+                        conn.on('close', () => {
+                            console.log('Remote disconnected');
+                            this.connections = this.connections.filter(c => c !== conn);
+                            this.updateConnectionStatus(this.connections.length > 0);
+                        });
                     });
                     
-                    // Update connection status
-                    this.updateConnectionStatus(true);
+                    this.peer.on('error', (err) => {
+                        console.error('PeerJS error:', err);
+                        this.initBroadcastChannel();
+                    });
                     
                 } catch (error) {
-                    console.error('Firebase initialization failed:', error);
-                    // Fallback to BroadcastChannel for local testing
+                    console.error('PeerJS initialization failed:', error);
                     this.initBroadcastChannel();
                 }
             }
@@ -401,16 +415,22 @@
             }
 
             broadcastAction(action) {
-                // Send to Firebase if available
-                if (this.roomRef) {
-                    this.roomRef.push({
+                // Send to all PeerJS connections
+                if (this.connections && this.connections.length > 0) {
+                    const data = {
                         action: action,
                         timestamp: Date.now(),
                         source: 'whiteboard'
+                    };
+                    
+                    this.connections.forEach(conn => {
+                        if (conn.open) {
+                            conn.send(data);
+                        }
                     });
                 }
                 
-                // Fallback to BroadcastChannel
+                // Fallback to BroadcastChannel for local testing
                 if (this.channel) {
                     this.channel.postMessage({
                         type: 'whiteboard-action',

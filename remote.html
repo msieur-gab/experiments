@@ -253,9 +253,8 @@
         </div>
     </div>
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <!-- PeerJS for easy WebRTC -->
+    <script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
 
     <script>
         class RemoteControl {
@@ -279,40 +278,59 @@
             initConnection() {
                 document.getElementById('roomCode').textContent = this.roomCode;
                 
-                // Initialize Firebase for cross-device communication
-                const firebaseConfig = {
-                    apiKey: "AIzaSyDummy-Key-For-POC-Testing-Only",
-                    authDomain: "whiteboard-poc.firebaseapp.com",
-                    databaseURL: "https://whiteboard-poc-default-rtdb.firebaseio.com/",
-                    projectId: "whiteboard-poc"
-                };
-                
                 try {
-                    // Initialize Firebase
-                    firebase.initializeApp(firebaseConfig);
-                    this.database = firebase.database();
-                    this.roomRef = this.database.ref(`rooms/${this.roomCode}/actions`);
-                    
-                    // Listen for whiteboard actions
-                    this.roomRef.on('child_added', (snapshot) => {
-                        const data = snapshot.val();
-                        if (data && data.source === 'whiteboard') {
-                            this.handleWhiteboardMessage({
-                                type: 'whiteboard-action',
-                                action: data.action,
-                                timestamp: data.timestamp
-                            });
-                        }
+                    // Initialize PeerJS (connects to the whiteboard)
+                    this.peer = new Peer(null, {
+                        host: 'peerjs-server.herokuapp.com',
+                        port: 443,
+                        secure: true,
+                        path: '/'
                     });
                     
-                    // Connection successful
-                    this.updateConnectionStatus(true);
+                    this.peer.on('open', (id) => {
+                        console.log('Remote peer opened with ID:', id);
+                        this.connectToWhiteboard();
+                    });
+                    
+                    this.peer.on('error', (err) => {
+                        console.error('PeerJS error:', err);
+                        this.initBroadcastChannel();
+                    });
                     
                 } catch (error) {
-                    console.error('Firebase initialization failed:', error);
-                    // Fallback to BroadcastChannel
+                    console.error('PeerJS initialization failed:', error);
                     this.initBroadcastChannel();
                 }
+            }
+            
+            connectToWhiteboard() {
+                // Connect to the whiteboard using the room code
+                this.connection = this.peer.connect(this.roomCode);
+                
+                this.connection.on('open', () => {
+                    console.log('Connected to whiteboard');
+                    this.updateConnectionStatus(true);
+                });
+                
+                this.connection.on('data', (data) => {
+                    if (data.source === 'whiteboard') {
+                        this.handleWhiteboardMessage({
+                            type: 'whiteboard-action',
+                            action: data.action,
+                            timestamp: data.timestamp
+                        });
+                    }
+                });
+                
+                this.connection.on('close', () => {
+                    console.log('Connection to whiteboard closed');
+                    this.updateConnectionStatus(false);
+                });
+                
+                this.connection.on('error', (err) => {
+                    console.error('Connection error:', err);
+                    this.showConnectionError();
+                });
             }
             
             initBroadcastChannel() {
@@ -502,16 +520,16 @@
                     return;
                 }
 
-                // Send to Firebase if available
-                if (this.roomRef) {
-                    this.roomRef.push({
+                // Send to PeerJS connection
+                if (this.connection && this.connection.open) {
+                    this.connection.send({
                         action: action,
                         timestamp: Date.now(),
                         source: 'mobile'
                     });
                 }
                 
-                // Fallback to BroadcastChannel
+                // Fallback to BroadcastChannel for local testing
                 if (this.channel) {
                     this.channel.postMessage({
                         type: 'remote-action',
