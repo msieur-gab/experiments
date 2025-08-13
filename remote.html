@@ -253,6 +253,10 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
     <script>
         class RemoteControl {
             constructor() {
@@ -275,18 +279,50 @@
             initConnection() {
                 document.getElementById('roomCode').textContent = this.roomCode;
                 
-                // For POC, use BroadcastChannel (same as whiteboard)
+                // Initialize Firebase for cross-device communication
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDummy-Key-For-POC-Testing-Only",
+                    authDomain: "whiteboard-poc.firebaseapp.com",
+                    databaseURL: "https://whiteboard-poc-default-rtdb.firebaseio.com/",
+                    projectId: "whiteboard-poc"
+                };
+                
+                try {
+                    // Initialize Firebase
+                    firebase.initializeApp(firebaseConfig);
+                    this.database = firebase.database();
+                    this.roomRef = this.database.ref(`rooms/${this.roomCode}/actions`);
+                    
+                    // Listen for whiteboard actions
+                    this.roomRef.on('child_added', (snapshot) => {
+                        const data = snapshot.val();
+                        if (data && data.source === 'whiteboard') {
+                            this.handleWhiteboardMessage({
+                                type: 'whiteboard-action',
+                                action: data.action,
+                                timestamp: data.timestamp
+                            });
+                        }
+                    });
+                    
+                    // Connection successful
+                    this.updateConnectionStatus(true);
+                    
+                } catch (error) {
+                    console.error('Firebase initialization failed:', error);
+                    // Fallback to BroadcastChannel
+                    this.initBroadcastChannel();
+                }
+            }
+            
+            initBroadcastChannel() {
+                console.log('Using BroadcastChannel fallback');
                 try {
                     this.channel = new BroadcastChannel(`whiteboard-${this.roomCode}`);
                     this.channel.onmessage = (event) => {
                         this.handleWhiteboardMessage(event.data);
                     };
-                    
-                    // Simulate successful connection
-                    setTimeout(() => {
-                        this.updateConnectionStatus(true);
-                    }, 1000);
-                    
+                    this.updateConnectionStatus(true);
                 } catch (error) {
                     this.showConnectionError();
                 }
@@ -421,6 +457,15 @@
                         x: (e.clientX - rect.left) / rect.width,
                         y: (e.clientY - rect.top) / rect.height
                     };
+                    
+                    this.sendAction({
+                        type: 'gestureStart',
+                        x: lastPos.x,
+                        y: lastPos.y,
+                        tool: this.currentTool,
+                        color: this.currentColor
+                    });
+                    
                     this.showGestureFeedback('✨');
                 });
 
@@ -431,26 +476,50 @@
                         x: (e.clientX - rect.left) / rect.width,
                         y: (e.clientY - rect.top) / rect.height
                     };
+                    
+                    this.sendAction({
+                        type: 'gestureDraw',
+                        x: pos.x,
+                        y: pos.y,
+                        deltaX: pos.x - lastPos.x,
+                        deltaY: pos.y - lastPos.y
+                    });
+                    
                     lastPos = pos;
                 });
 
                 gestureArea.addEventListener('mouseup', () => {
-                    isDrawing = false;
+                    if (isDrawing) {
+                        isDrawing = false;
+                        this.sendAction({ type: 'gestureEnd' });
+                    }
                 });
             }
 
             sendAction(action) {
-                if (!this.isConnected || !this.channel) {
+                if (!this.isConnected) {
                     console.log('Not connected, action ignored:', action);
                     return;
                 }
 
-                this.channel.postMessage({
-                    type: 'remote-action',
-                    action: action,
-                    timestamp: Date.now(),
-                    source: 'mobile'
-                });
+                // Send to Firebase if available
+                if (this.roomRef) {
+                    this.roomRef.push({
+                        action: action,
+                        timestamp: Date.now(),
+                        source: 'mobile'
+                    });
+                }
+                
+                // Fallback to BroadcastChannel
+                if (this.channel) {
+                    this.channel.postMessage({
+                        type: 'remote-action',
+                        action: action,
+                        timestamp: Date.now(),
+                        source: 'mobile'
+                    });
+                }
             }
 
             handleWhiteboardMessage(data) {

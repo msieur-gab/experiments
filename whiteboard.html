@@ -187,6 +187,10 @@
     <!-- QR Code generator that definitely works -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
     
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
     <script>
         class WhiteboardHost {
             constructor() {
@@ -336,24 +340,51 @@
             }
 
             initWebRTC() {
-                // For POC, we'll simulate WebRTC with localStorage/broadcast channel
-                // In real implementation, use actual WebRTC with signaling server
-                
                 document.getElementById('roomCode').textContent = this.roomCode;
                 
-                // Create broadcast channel for local testing
+                // Initialize Firebase for cross-device communication
+                const firebaseConfig = {
+                    apiKey: "AIzaSyDummy-Key-For-POC-Testing-Only",
+                    authDomain: "whiteboard-poc.firebaseapp.com",
+                    databaseURL: "https://whiteboard-poc-default-rtdb.firebaseio.com/",
+                    projectId: "whiteboard-poc"
+                };
+                
+                try {
+                    // Initialize Firebase
+                    firebase.initializeApp(firebaseConfig);
+                    this.database = firebase.database();
+                    this.roomRef = this.database.ref(`rooms/${this.roomCode}/actions`);
+                    
+                    // Listen for remote actions
+                    this.roomRef.on('child_added', (snapshot) => {
+                        const data = snapshot.val();
+                        if (data && data.source !== 'whiteboard') {
+                            this.handleRemoteAction({
+                                type: 'remote-action',
+                                action: data.action,
+                                timestamp: data.timestamp
+                            });
+                        }
+                    });
+                    
+                    // Update connection status
+                    this.updateConnectionStatus(true);
+                    
+                } catch (error) {
+                    console.error('Firebase initialization failed:', error);
+                    // Fallback to BroadcastChannel for local testing
+                    this.initBroadcastChannel();
+                }
+            }
+            
+            initBroadcastChannel() {
+                console.log('Using BroadcastChannel fallback');
                 this.channel = new BroadcastChannel(`whiteboard-${this.roomCode}`);
                 this.channel.onmessage = (event) => {
                     this.handleRemoteAction(event.data);
                 };
-                
-                // Update connection status
-                this.updateConnectionStatus(false);
-                
-                // Simulate connection after 2 seconds for demo
-                setTimeout(() => {
-                    this.updateConnectionStatus(true);
-                }, 2000);
+                this.updateConnectionStatus(true);
             }
 
             updateConnectionStatus(connected) {
@@ -370,6 +401,16 @@
             }
 
             broadcastAction(action) {
+                // Send to Firebase if available
+                if (this.roomRef) {
+                    this.roomRef.push({
+                        action: action,
+                        timestamp: Date.now(),
+                        source: 'whiteboard'
+                    });
+                }
+                
+                // Fallback to BroadcastChannel
                 if (this.channel) {
                     this.channel.postMessage({
                         type: 'whiteboard-action',
