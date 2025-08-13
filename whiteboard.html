@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whiteboard - WebRTC POC</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #f8f9fa;
+            font-family: system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+        }
+
+        .header {
+            background: white;
+            padding: 1rem;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #dc3545;
+        }
+
+        .status-dot.connected {
+            background: #28a745;
+        }
+
+        .room-info {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .canvas-container {
+            width: 100vw;
+            height: calc(100vh - 80px);
+            position: relative;
+        }
+
+        #whiteboard {
+            width: 100%;
+            height: 100%;
+            background: white;
+            cursor: crosshair;
+            display: block;
+        }
+
+        .tools {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 0.5rem;
+            flex-direction: column;
+        }
+
+        .tool-button {
+            padding: 0.5rem;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .tool-button.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+
+        .color-picker {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .connection-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .connection-modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 400px;
+        }
+
+        .qr-code {
+            margin: 1rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .qr-code canvas {
+            border: 1px solid #dee2e6;
+        }
+
+        .connection-code {
+            font-family: monospace;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #007bff;
+            margin: 0.5rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Whiteboard POC</h1>
+        <div class="connection-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Waiting for connection...</span>
+        </div>
+        <div class="room-info">
+            Room: <span id="roomCode">-</span>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="whiteboard"></canvas>
+        
+        <div class="tools">
+            <button class="tool-button active" data-tool="pen">Pen</button>
+            <button class="tool-button" data-tool="eraser">Eraser</button>
+            <input type="color" class="color-picker" id="colorPicker" value="#000000">
+            <button class="tool-button" id="clearCanvas">Clear</button>
+        </div>
+    </div>
+
+    <div class="connection-modal" id="connectionModal">
+        <div class="modal-content">
+            <h2>Connect Remote Control</h2>
+            <p>Open this URL on your mobile device:</p>
+            <div class="connection-code" id="mobileUrl">-</div>
+            <div class="qr-code">
+                <canvas id="qrCode" width="200" height="200"></canvas>
+            </div>
+            <p><small>Or scan the QR code above</small></p>
+            <button onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <!-- QR Code generator that definitely works -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    
+    <script>
+        class WhiteboardHost {
+            constructor() {
+                this.canvas = document.getElementById('whiteboard');
+                this.ctx = this.canvas.getContext('2d');
+                this.isDrawing = false;
+                this.currentTool = 'pen';
+                this.currentColor = '#000000';
+                this.lineWidth = 2;
+                
+                // WebRTC
+                this.peerConnection = null;
+                this.dataChannel = null;
+                this.roomCode = this.generateRoomCode();
+                
+                this.initCanvas();
+                this.initTools();
+                this.initWebRTC();
+                this.showConnectionModal();
+            }
+
+            initCanvas() {
+                // Set canvas size to full window
+                this.resizeCanvas();
+                window.addEventListener('resize', () => this.resizeCanvas());
+                
+                // Drawing event listeners
+                this.canvas.addEventListener('mousedown', (e) => this.startDrawing(e));
+                this.canvas.addEventListener('mousemove', (e) => this.draw(e));
+                this.canvas.addEventListener('mouseup', () => this.stopDrawing());
+                this.canvas.addEventListener('mouseout', () => this.stopDrawing());
+                
+                // Touch events for mobile
+                this.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent('mousedown', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                    this.canvas.dispatchEvent(mouseEvent);
+                });
+                
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent('mousemove', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                    this.canvas.dispatchEvent(mouseEvent);
+                });
+                
+                this.canvas.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    const mouseEvent = new MouseEvent('mouseup', {});
+                    this.canvas.dispatchEvent(mouseEvent);
+                });
+            }
+
+            resizeCanvas() {
+                const rect = this.canvas.getBoundingClientRect();
+                this.canvas.width = rect.width;
+                this.canvas.height = rect.height;
+                
+                // Reset canvas properties after resize
+                this.ctx.lineCap = 'round';
+                this.ctx.lineJoin = 'round';
+            }
+
+            initTools() {
+                // Tool buttons
+                document.querySelectorAll('.tool-button[data-tool]').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        document.querySelector('.tool-button.active').classList.remove('active');
+                        e.target.classList.add('active');
+                        this.currentTool = e.target.dataset.tool;
+                    });
+                });
+
+                // Color picker
+                document.getElementById('colorPicker').addEventListener('change', (e) => {
+                    this.currentColor = e.target.value;
+                });
+
+                // Clear canvas
+                document.getElementById('clearCanvas').addEventListener('click', () => {
+                    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                    this.broadcastAction({
+                        type: 'clear'
+                    });
+                });
+            }
+
+            startDrawing(e) {
+                this.isDrawing = true;
+                const pos = this.getMousePos(e);
+                this.ctx.beginPath();
+                this.ctx.moveTo(pos.x, pos.y);
+                
+                this.broadcastAction({
+                    type: 'startDrawing',
+                    x: pos.x,
+                    y: pos.y,
+                    tool: this.currentTool,
+                    color: this.currentColor,
+                    lineWidth: this.lineWidth
+                });
+            }
+
+            draw(e) {
+                if (!this.isDrawing) return;
+                
+                const pos = this.getMousePos(e);
+                
+                this.ctx.lineWidth = this.lineWidth;
+                this.ctx.strokeStyle = this.currentTool === 'eraser' ? '#ffffff' : this.currentColor;
+                this.ctx.lineTo(pos.x, pos.y);
+                this.ctx.stroke();
+                
+                this.broadcastAction({
+                    type: 'draw',
+                    x: pos.x,
+                    y: pos.y
+                });
+            }
+
+            stopDrawing() {
+                if (this.isDrawing) {
+                    this.isDrawing = false;
+                    this.broadcastAction({
+                        type: 'stopDrawing'
+                    });
+                }
+            }
+
+            getMousePos(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                return {
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top
+                };
+            }
+
+            generateRoomCode() {
+                return Math.random().toString(36).substring(2, 8).toUpperCase();
+            }
+
+            initWebRTC() {
+                // For POC, we'll simulate WebRTC with localStorage/broadcast channel
+                // In real implementation, use actual WebRTC with signaling server
+                
+                document.getElementById('roomCode').textContent = this.roomCode;
+                
+                // Create broadcast channel for local testing
+                this.channel = new BroadcastChannel(`whiteboard-${this.roomCode}`);
+                this.channel.onmessage = (event) => {
+                    this.handleRemoteAction(event.data);
+                };
+                
+                // Update connection status
+                this.updateConnectionStatus(false);
+                
+                // Simulate connection after 2 seconds for demo
+                setTimeout(() => {
+                    this.updateConnectionStatus(true);
+                }, 2000);
+            }
+
+            updateConnectionStatus(connected) {
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('statusText');
+                
+                if (connected) {
+                    dot.classList.add('connected');
+                    text.textContent = 'Remote connected';
+                } else {
+                    dot.classList.remove('connected');
+                    text.textContent = 'Waiting for connection...';
+                }
+            }
+
+            broadcastAction(action) {
+                if (this.channel) {
+                    this.channel.postMessage({
+                        type: 'whiteboard-action',
+                        action: action,
+                        timestamp: Date.now()
+                    });
+                }
+            }
+
+            handleRemoteAction(data) {
+                if (data.type !== 'remote-action') return;
+                
+                const action = data.action;
+                console.log('Remote action:', action);
+                
+                // Handle remote drawing commands here
+                // For POC, just log them
+            }
+
+            showConnectionModal() {
+                const baseUrl = window.location.origin + window.location.pathname.replace('whiteboard.html', '');
+                const mobileUrl = `${baseUrl}remote.html?room=${this.roomCode}`;
+                document.getElementById('mobileUrl').textContent = mobileUrl;
+                
+                // Generate QR code
+                this.generateQRCode(mobileUrl);
+                
+                document.getElementById('connectionModal').classList.remove('hidden');
+            }
+
+            generateQRCode(url) {
+                const canvas = document.getElementById('qrCode');
+                
+                try {
+                    // Generate QR code using QRious library (much simpler!)
+                    if (typeof QRious !== 'undefined') {
+                        const qr = new QRious({
+                            element: canvas,
+                            value: url,
+                            size: 200,
+                            background: '#ffffff',
+                            foreground: '#000000',
+                            level: 'M'
+                        });
+                    } else {
+                        throw new Error('QRious library not loaded');
+                    }
+                } catch (error) {
+                    console.error('QR code generation failed:', error);
+                    // Fallback display
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#f8f9fa';
+                    ctx.fillRect(0, 0, 200, 200);
+                    ctx.strokeStyle = '#dee2e6';
+                    ctx.strokeRect(0, 0, 200, 200);
+                    
+                    ctx.fillStyle = '#333';
+                    ctx.font = '16px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('📱', 100, 80);
+                    ctx.font = '12px Arial';
+                    ctx.fillText('QR Code Error', 100, 100);
+                    ctx.font = '10px Arial';
+                    ctx.fillText('Use URL below', 100, 120);
+                }
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('connectionModal').classList.add('hidden');
+        }
+
+        // Initialize whiteboard
+        const whiteboard = new WhiteboardHost();
+    </script>
+</body>
+</html>
