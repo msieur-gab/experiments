@@ -29,7 +29,7 @@
 
   .bar { display:flex; align-items:center; justify-content:space-around; gap:12px;
     padding:14px 16px calc(env(safe-area-inset-bottom) + 14px); background:var(--panel); z-index:3; }
-  .btn { background:#262626; color:var(--fg); border:0; border-radius:12px; padding:12px 16px; font:inherit; min-width:84px; }
+  .btn { background:#262626; color:var(--fg); border:0; border-radius:12px; padding:12px 14px; font:inherit; min-width:72px; }
   .btn.primary { background:var(--accent); color:#111; font-weight:600; }
   .shutter { width:72px; height:72px; border-radius:50%; border:4px solid var(--fg); background:transparent; padding:0; }
   .shutter span { display:block; width:56px; height:56px; margin:4px; border-radius:50%; background:var(--fg); transition:transform .1s; }
@@ -42,6 +42,20 @@
   .msg { padding:24px; text-align:center; color:var(--dim); }
   .msg b { color:var(--fg); }
   input[type=file] { display:none; }
+
+  /* OCR */
+  #textWrap { flex:1; overflow:auto; background:#1a1a1a; position:relative; }
+  #textWrap textarea { width:100%; min-height:100%; border:0; resize:none; background:#151515; color:var(--fg);
+    padding:16px; font:14px/1.55 ui-monospace, SFMono-Regular, Menlo, monospace; outline:none; }
+  #textWrap .boxes { display:flex; justify-content:center; padding:16px; }
+  #textWrap .boxes canvas { max-width:100%; height:auto; box-shadow:0 6px 30px rgba(0,0,0,.6); }
+  .legend { display:flex; gap:12px; justify-content:center; font-size:12px; color:var(--dim); padding:6px 16px 0; background:var(--panel); }
+  .legend i { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px; }
+  select.lang { background:#262626; color:var(--fg); border:1px solid #444; border-radius:999px; padding:5px 10px; font:inherit; font-size:13px; }
+  .progress { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
+    background:rgba(14,14,14,.86); color:var(--dim); font-size:14px; text-align:center; padding:24px; z-index:4; }
+  .progress .track { width:70%; max-width:280px; height:6px; border-radius:3px; background:#333; overflow:hidden; }
+  .progress .fill { height:100%; width:0; background:var(--accent); transition:width .15s; }
 </style>
 </head>
 <body>
@@ -90,13 +104,45 @@
   <div class="bar">
     <button class="btn" id="retake">Retake</button>
     <button class="btn" id="readjust">Corners</button>
-    <button class="btn primary" id="share">Share</button>
+    <button class="btn" id="share">Share</button>
+    <button class="btn primary" id="readText">Read text</button>
+  </div>
+</section>
+
+<!-- 4. Text (OCR, on device) -->
+<section id="textScreen" class="screen">
+  <header>
+    <h1>Text</h1>
+    <div class="seg" id="viewSeg">
+      <button data-view="boxes" class="on">Boxes</button>
+      <button data-view="text">Text</button>
+      <button data-view="md">MD</button>
+    </div>
+  </header>
+  <div id="textWrap"></div>
+  <div class="legend" id="legend">
+    <span><i style="background:#6cc070"></i>sure ≥80</span>
+    <span><i style="background:#e8c26a"></i>60–80</span>
+    <span><i style="background:#e0605a"></i>unsure &lt;60</span>
+  </div>
+  <div class="stats" id="textStats">&nbsp;</div>
+  <div class="bar">
+    <button class="btn" id="textBack">Back</button>
+    <select class="lang" id="lang" aria-label="Language">
+      <option value="eng+fra" selected>EN+FR</option>
+      <option value="eng">EN</option>
+      <option value="fra">FR</option>
+      <option value="deu">DE</option>
+      <option value="eng+fra+deu">EN+FR+DE</option>
+    </select>
+    <button class="btn primary" id="textShare">Copy</button>
   </div>
 </section>
 
 <script type="module">
 import { Scanner, createCornerEditor, extractDocument }
   from 'https://cdn.jsdelivr.net/npm/scanic@1.7.1/dist/scanic.js';
+import Tesseract from 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/tesseract.esm.min.js';
 
 const $ = id => document.getElementById(id);
 const video = $('video'), overlay = $('overlay'), octx = overlay.getContext('2d');
@@ -277,6 +323,8 @@ async function makeResult() {
   editor?.destroy(); editor = null;
   if (!r.success || !r.output) { alert('Could not extract: ' + r.message); return show('camScreen'); }
   extracted = r.output;
+  makeResult.n = (makeResult.n || 0) + 1; // new page → OCR runs again
+  warmUp();                               // fetch the OCR engine while you look at the page
   $('resultStats').textContent = `straightened in ${t} ms · ${extracted.width}×${extracted.height}`;
   render();
   show('resultScreen');
@@ -319,6 +367,208 @@ $('share').onclick = async () => {
   }
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+};
+
+/* ---------- OCR: Tesseract.js, all on the phone ---------- */
+// The WASM engine and language files come from the jsDelivr CDN the first time,
+// then the language files are cached in IndexedDB. The image never leaves the phone.
+let ocrWorker = null, ocrLang = null, ocrReady = null;
+let ocrStatus = '', ocrProgress = 0;
+let ocr = null;            // { key, canvas, data, text, md, ms }
+let view = 'boxes';
+
+const STATUS = {
+  'loading tesseract core': 'Loading the OCR engine…',
+  'initializing tesseract': 'Starting the OCR engine…',
+  'loading language traineddata': 'Loading language data (first time: a few MB)…',
+  'loaded language traineddata': 'Language data ready',
+  'initializing api': 'Preparing…',
+  'initialized api': 'Ready',
+  'recognizing text': 'Reading the page…'
+};
+function onLog(m) {
+  ocrStatus = STATUS[m.status] || m.status;
+  ocrProgress = m.progress || 0;
+  const p = $('textWrap').querySelector('.progress');
+  if (p) {
+    p.querySelector('.label').textContent = ocrStatus;
+    p.querySelector('.fill').style.width = Math.round(ocrProgress * 100) + '%';
+  }
+}
+function getWorker(lang) {
+  if (ocrReady && ocrLang === lang) return ocrReady;
+  ocrLang = lang;
+  ocrReady = (async () => {
+    if (!ocrWorker) {
+      // OEM 1 = LSTM only (the "best_int" models: smaller, more accurate)
+      ocrWorker = await Tesseract.createWorker(lang, 1, { logger: onLog });
+    } else {
+      await ocrWorker.reinitialize(lang, 1);
+    }
+    await ocrWorker.setParameters({ user_defined_dpi: '300', preserve_interword_spaces: '1' });
+    return ocrWorker;
+  })();
+  ocrReady.catch(() => { ocrReady = null; });
+  return ocrReady;
+}
+function warmUp() { getWorker($('lang').value).catch(() => {}); }
+
+function forOcr(src) {
+  // Tesseract likes text around 20–40 px tall: bring the page to ~1600–2400 px wide
+  const w = src.width;
+  const s = w < 1600 ? Math.min(2, 1600 / w) : w > 2400 ? 2400 / w : 1;
+  const c = document.createElement('canvas');
+  c.width = Math.round(src.width * s); c.height = Math.round(src.height * s);
+  const x = c.getContext('2d');
+  x.imageSmoothingQuality = 'high';
+  x.drawImage(src, 0, 0, c.width, c.height);
+  return c;
+}
+
+function lineH(l) {
+  const r = l.rowAttributes?.rowHeight;
+  return r > 0 ? r : l.bbox.y1 - l.bbox.y0;
+}
+function joinLines(lines) {
+  let out = '';
+  for (const raw of lines) {
+    const t = raw.trim();
+    if (!t) continue;
+    if (!out) out = t;
+    else if (/[A-Za-zÀ-ÿ]-$/.test(out) && /^[a-zà-ÿ]/.test(t)) out = out.slice(0, -1) + t; // hyphenated word
+    else out += ' ' + t;
+  }
+  return out;
+}
+const BULLET = /^([•·▪◦●○■□➢►\-–—*]|\d{1,3}[.)]|[a-z][.)])\s+/;
+function toMarkdown(blocks) {
+  const all = [];
+  blocks.forEach(b => b.paragraphs.forEach(p => p.lines.forEach(l => { if (l.text.trim()) all.push(lineH(l)); })));
+  if (!all.length) return '';
+  all.sort((a, b) => a - b);
+  const median = all[Math.floor(all.length / 2)];
+  const parts = [];
+  for (const b of blocks) for (const p of b.paragraphs) {
+    const lines = p.lines.filter(l => l.text.trim());
+    if (!lines.length) continue;
+    const texts = lines.map(l => l.text.trim());
+    const avg = lines.reduce((s, l) => s + lineH(l), 0) / lines.length;
+    const ratio = avg / median;
+    const joined = joinLines(texts);
+
+    if (lines.length <= 2 && ratio >= 1.3 && joined.length < 120) {
+      const level = ratio >= 1.9 ? 1 : ratio >= 1.55 ? 2 : 3;
+      parts.push('#'.repeat(level) + ' ' + joined.replace(/[:.]$/, ''));
+      continue;
+    }
+    if (texts.some(t => BULLET.test(t))) {
+      const items = [];
+      for (const t of texts) {
+        const m = t.match(BULLET);
+        if (m) items.push({ num: /\d/.test(m[1]) ? m[1] : null, lines: [t.slice(m[0].length)] });
+        else if (items.length) items[items.length - 1].lines.push(t);
+        else items.push({ num: null, plain: true, lines: [t] });
+      }
+      parts.push(items.map(it => it.plain ? joinLines(it.lines)
+        : (it.num ? it.num.replace(')', '.') + ' ' : '- ') + joinLines(it.lines)).join('\n'));
+      continue;
+    }
+    parts.push(joined);
+  }
+  return parts.join('\n\n') + '\n';
+}
+
+function boxesCanvas() {
+  const c = document.createElement('canvas');
+  c.width = ocr.canvas.width; c.height = ocr.canvas.height;
+  const x = c.getContext('2d');
+  x.drawImage(ocr.canvas, 0, 0);
+  x.lineWidth = Math.max(2, c.width / 600);
+  for (const b of ocr.data.blocks || []) for (const p of b.paragraphs) for (const l of p.lines) for (const w of l.words) {
+    if (!w.text.trim()) continue;
+    const col = w.confidence >= 80 ? '108,192,112' : w.confidence >= 60 ? '232,194,106' : '224,96,90';
+    const { x0, y0, x1, y1 } = w.bbox;
+    x.fillStyle = `rgba(${col},.16)`; x.fillRect(x0, y0, x1 - x0, y1 - y0);
+    x.strokeStyle = `rgb(${col})`; x.strokeRect(x0, y0, x1 - x0, y1 - y0);
+  }
+  return c;
+}
+function renderText() {
+  const wrap = $('textWrap');
+  $('legend').style.display = view === 'boxes' ? 'flex' : 'none';
+  $('textShare').textContent = 'Copy';
+  if (!ocr) return;
+  if (view === 'boxes') {
+    const d = document.createElement('div'); d.className = 'boxes'; d.append(boxesCanvas());
+    wrap.replaceChildren(d);
+  } else {
+    const ta = document.createElement('textarea');
+    ta.spellcheck = false;
+    ta.value = view === 'md' ? ocr.md : ocr.text;
+    ta.oninput = () => { ocr[view === 'md' ? 'md' : 'text'] = ta.value; }; // your corrections are kept
+    wrap.replaceChildren(ta);
+  }
+}
+function showProgress() {
+  const p = document.createElement('div');
+  p.className = 'progress';
+  p.innerHTML = `<span class="label">${ocrStatus || 'Starting…'}</span><div class="track"><div class="fill"></div></div>
+    <span style="font-size:12px">Runs on this phone · the image is not uploaded</span>`;
+  $('textWrap').replaceChildren(p);
+}
+
+async function runOcr() {
+  if (!extracted) return;
+  const lang = $('lang').value;
+  const key = [extracted.width, extracted.height, look, lang, makeResult.n].join('|');
+  show('textScreen');
+  if (ocr?.key === key) return renderText();
+  ocr = null; ocrStatus = ''; showProgress();
+  $('textStats').textContent = '';
+  try {
+    const t0 = performance.now();
+    const worker = await getWorker(lang);
+    const tLoad = ms(t0);
+    const canvas = forOcr(current());
+    const t1 = performance.now();
+    const { data } = await worker.recognize(canvas, {}, { text: true, blocks: true });
+    const t = ms(t1);
+    const words = [];
+    (data.blocks || []).forEach(b => b.paragraphs.forEach(p => p.lines.forEach(l => l.words.forEach(w => w.text.trim() && words.push(w)))));
+    const unsure = words.filter(w => w.confidence < 60).length;
+    ocr = { key, canvas, data, text: data.text.trim() + '\n', md: toMarkdown(data.blocks || []) };
+    $('textStats').textContent =
+      `${lang} · read in ${(t / 1000).toFixed(1)} s` + (tLoad > 300 ? ` (+${(tLoad / 1000).toFixed(1)} s loading)` : '') +
+      ` · ${words.length} words · conf ${Math.round(data.confidence)} · ${unsure} unsure · ${canvas.width}×${canvas.height}`;
+    if (!words.length) {
+      $('textWrap').innerHTML = '<div class="msg"><b>No text found.</b><br>Try the Doc look, a closer photo, or another language.</div>';
+      return;
+    }
+    renderText();
+  } catch (err) {
+    $('textWrap').innerHTML = `<div class="msg"><b>OCR failed</b><br>${err?.message || err}</div>`;
+  }
+}
+
+$('readText').onclick = runOcr;
+$('textBack').onclick = () => show('resultScreen');
+$('viewSeg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  view = b.dataset.view;
+  [...$('viewSeg').children].forEach(x => x.classList.toggle('on', x === b));
+  if (ocr) renderText();
+});
+$('lang').onchange = () => { if ($('textScreen').classList.contains('on')) runOcr(); else warmUp(); };
+$('textShare').onclick = async () => {
+  if (!ocr) return;
+  const txt = view === 'text' ? ocr.text : ocr.md;
+  try { await navigator.clipboard.writeText(txt); $('textShare').textContent = 'Copied'; }
+  catch (_) {
+    const name = 'scan-' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.md';
+    const file = new File([txt], name, { type: 'text/markdown' });
+    if (navigator.canShare?.({ files: [file] })) navigator.share({ files: [file], title: name }).catch(() => {});
+  }
+  setTimeout(() => ($('textShare').textContent = 'Copy'), 1500);
 };
 
 startCamera();
