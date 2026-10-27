@@ -19,12 +19,19 @@ Built from source, Cosmopolitan release 4.0.2, because redbean.dev and cosmo.zip
 ```sh
 git clone --depth 1 --branch 4.0.2 https://github.com/jart/cosmopolitan
 cd cosmopolitan
-make -j o//tool/net/redbean                      # x86-64
+make -j o//tool/net/redbean                      # x86-64 (about 6 min on 2 cores)
 make -j m=aarch64 o/aarch64/tool/net/redbean     # 64-bit ARM
-# join both into one file that runs on either (see package notes in HANDOFF.md)
+make -j m=aarch64 o/aarch64/ape/ape.elf          # ARM launcher
+# join both into one file that runs on either, then copy redbean's bundled files in
+B=.cosmocc/3.9.2/bin
+$B/apelink -l o//ape/ape.elf -l o/aarch64/ape/ape.elf -M ape/ape-m1.c \
+  -o redbean.com o//tool/net/redbean.dbg o/aarch64/tool/net/redbean.dbg
+$B/zipcopy o//tool/net/redbean.dbg redbean.com
 ```
 
-The make step downloads its own compiler (cosmocc 3.9.2) from the project's GitHub releases.
+The make step downloads its own compiler (cosmocc 3.9.2) from the project's GitHub releases. The result is 6.8 MB; its SHA-256 is in `bin/redbean.com.sha256`.
+
+An x86-only build is not enough: its launcher refuses to start on Apple Silicon and ARM Linux.
 
 On a normal connection, the simpler route is to download the official build from https://redbean.dev and use it as `bin/redbean.com`.
 

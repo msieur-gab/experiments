@@ -40,6 +40,8 @@ Build it with `sh package.sh` (needs node and zip). It writes `dist/METOS/`; cop
 - A `.md` file copied into `kb/` by hand appears on reload.
 - The app through the server shows "on this stick", the editor's button reads "Save to stick", and a saved entry is found after reload.
 - Opening `index.html` as a plain file still works, using `kb.js`.
+- The ARM half of `metos.com` (64-bit ARM) serves the page and entries under QEMU emulation. Not yet tried on real ARM hardware.
+- Final stick folder: 6.8 MB, almost all of it `metos.com`.
 
 ## To test on real machines
 
