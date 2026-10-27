@@ -49,7 +49,7 @@ function render(r, why) {
   } else if (r.type === 'list') {
     out.push('== ' + r.u.tags.join(' + ') + ' ==');
     r.entries.forEach(function (e) {
-      out.push('- ' + e.title + (e.warn ? '  !' : '') + '\n  ' + firstLine(e));
+      out.push('- ' + e.title + '\n  ' + firstLine(e));
     });
   } else if (r.type === 'choose') {
     out.push('Which one do you mean?');
