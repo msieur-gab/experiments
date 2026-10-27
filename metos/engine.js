@@ -88,6 +88,20 @@
 
   // ---- entries -------------------------------------------------------------
 
+  // The text to search: pictures (```pic blocks) are pixels, not words.
+  // Their caption, on the opening line, stays searchable.
+  function words(text) {
+    var out = [], inPic = false, lines = String(text).split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i];
+      if (inPic) { if (/^```/.test(l)) inPic = false; continue; }
+      var m = /^```pic\b\s*(.*)$/.exec(l);
+      if (m) { inPic = true; out.push(m[1]); continue; }
+      out.push(l);
+    }
+    return out.join('\n');
+  }
+
   // Header: "key: value" lines at the top, ended by the first blank line.
   // Body: a summary, then "## section" blocks. A file with no header still
   // works: its first line becomes the title and the rest the summary.
@@ -129,7 +143,7 @@
     var see = (head.see || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
 
     var bodyWords = {};
-    var all = tokens(rest.join(' '));
+    var all = tokens(words(rest.join('\n')));
     for (var b = 0; b < all.length; b++) bodyWords[all[b]] = true;
 
     return {
@@ -256,8 +270,8 @@
     if (!u.aspect && leftover.length) {
       var best = 'summary', bestHits = 0;
       for (var j = 0; j < e.order.length; j++) {
-        var name = e.order[j], words = tokens(e.sections[name]), seen = {}, hits = 0;
-        for (var w = 0; w < words.length; w++) seen[words[w]] = true;
+        var name = e.order[j], ws = tokens(words(e.sections[name])), seen = {}, hits = 0;
+        for (var w = 0; w < ws.length; w++) seen[ws[w]] = true;
         for (var l = 0; l < leftover.length; l++) if (seen[leftover[l]]) hits++;
         if (hits > bestHits) { best = name; bestHits = hits; }
       }

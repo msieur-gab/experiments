@@ -6,12 +6,14 @@
  *   node cli.js "how do I make water safe"
  *   node cli.js            (interactive)
  *   node cli.js --why "is wild garlic safe"   (show how it decided)
+ *   --color / --raw    force pictures in colour, or as raw text
  */
 'use strict';
 var fs = require('fs');
 var path = require('path');
 var readline = require('readline');
 var metos = require('./engine.js');
+var pic = require('./pic.js');
 
 var here = __dirname;
 var kbDir = path.join(here, 'kb');
@@ -25,9 +27,29 @@ function loadKB() {
   return metos.buildKB(files, vocab);
 }
 
-// Images cannot show in a terminal: print their caption instead.
+// Image files cannot show in a terminal: print their caption instead.
+// ```pic pictures are drawn with coloured half blocks when the terminal
+// supports colour; otherwise their raw text is shown, which still reads
+// as a rough ASCII picture.
+var colour = process.stdout.isTTY && /truecolor|24bit/i.test(process.env.COLORTERM || '') && !process.env.NO_COLOR;
+if (process.argv.indexOf('--color') >= 0) colour = true;
+if (process.argv.indexOf('--raw') >= 0) colour = false;
+
 function plain(text) {
-  return text.replace(/!\[([^\]]*)\]\([^)]*\)/g, '[picture: $1]');
+  var lines = text.split('\n'), out = [], i = 0;
+  while (i < lines.length) {
+    var m = /^```pic\b\s*(.*)$/.exec(lines[i]);
+    if (!m) { out.push(lines[i++].replace(/!\[([^\]]*)\]\([^)]*\)/g, '[picture: $1]')); continue; }
+    var block = [];
+    i++;
+    while (i < lines.length && !/^```/.test(lines[i])) block.push(lines[i++]);
+    i++;
+    var parsed = pic.parse(block.join('\n'));
+    if (colour && parsed) out.push(pic.toAnsi(parsed));
+    else if (parsed) out = out.concat(parsed.rows);
+    if (m[1]) out.push('[picture: ' + m[1] + ']');
+  }
+  return out.join('\n');
 }
 
 function firstLine(e) {
@@ -69,8 +91,8 @@ function render(r, why) {
 }
 
 var args = process.argv.slice(2);
-var why = false;
-if (args[0] === '--why') { why = true; args.shift(); }
+var why = args.indexOf('--why') >= 0;
+args = args.filter(function (a) { return !/^--(why|color|raw)$/.test(a); });
 var kb = loadKB();
 
 if (args.length) {

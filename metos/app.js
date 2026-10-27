@@ -108,16 +108,32 @@
     return images[src] || ('kb/' + src);
   }
 
+  // A ```pic block becomes a real picture: paint its pixels on a canvas.
+  function picToCanvas(p) {
+    var c = document.createElement('canvas');
+    c.width = p.w; c.height = p.h;
+    c.getContext('2d').putImageData(new ImageData(metosPic.toRGBA(p), p.w, p.h), 0, 0);
+    return c;
+  }
+
+  function picToImg(text, caption) {
+    var p = window.metosPic && metosPic.parse(text);
+    if (!p) return null;
+    return '<figure class="pic"><img src="' + picToCanvas(p).toDataURL() + '" alt="' + esc(caption || 'picture') +
+      '" style="aspect-ratio:' + p.w + '/' + p.h + '">' + (caption ? '<figcaption>' + esc(caption) + '</figcaption>' : '') + '</figure>';
+  }
+
   function md(text) {
     var lines = String(text).split('\n'), html = [], i = 0;
     while (i < lines.length) {
       var l = lines[i];
       if (/^```/.test(l)) {
-        var code = [];
+        var code = [], picCaption = /^```pic\b\s*(.*)$/.exec(l);
         i++;
         while (i < lines.length && !/^```/.test(lines[i])) code.push(lines[i++]);
         i++;
-        html.push('<pre>' + esc(code.join('\n')) + '</pre>');
+        var drawn = picCaption && picToImg(code.join('\n'), picCaption[1]);
+        html.push(drawn || '<pre>' + esc(code.join('\n')) + '</pre>');
         continue;
       }
       var img = /^!\[([^\]]*)\]\(([^)]+)\)\s*$/.exec(l);
@@ -196,6 +212,9 @@
     if (r.section !== 'summary') card.appendChild(el('div', 'sec', esc(r.section)));
     if (e.warn) card.appendChild(el('div', 'warn', esc(e.warn)));
     if (r.missing) card.appendChild(el('p', 'note', 'This entry has nothing on “' + esc(r.missing) + '”. Here is the summary.'));
+    // A picture in the summary is the entry's portrait: show it on every card.
+    var portrait = r.section !== 'summary' && /(^|\n)(```pic[^\n]*\n[\s\S]*?\n```)/.exec(e.sections.summary || '');
+    if (portrait) card.appendChild(el('div', 'body', md(portrait[2])));
     card.appendChild(el('div', 'body', md(r.text)));
 
     var chips = el('div', 'chips');
@@ -277,6 +296,177 @@
     show(metos.ask(q, kb), q);
   }
 
+  // ---- pictures: photo in, text picture out ----------------------------------
+
+  var FRAMES = {
+    whole: { label: 'Whole photo', crop: function (w, h) { return [0, 0, w, h]; } },
+    square: { label: 'Centre square', crop: function (w, h) { var s = Math.min(w, h); return [(w - s) / 2, (h - s) / 2, s, s]; } },
+    close: { label: 'Close-up', crop: function (w, h) { var s = Math.min(w, h) * 0.6; return [(w - s) / 2, (h - s) / 2, s, s]; } }
+  };
+
+  // Shrink in halving steps: a single big jump makes jagged, noisy pixels.
+  function sample(img, frame, tw) {
+    var c = FRAMES[frame].crop(img.naturalWidth, img.naturalHeight);
+    var th = Math.max(1, Math.round(tw * c[3] / c[2]));
+    var src = document.createElement('canvas');
+    src.width = Math.round(c[2]); src.height = Math.round(c[3]);
+    src.getContext('2d').drawImage(img, c[0], c[1], c[2], c[3], 0, 0, src.width, src.height);
+    while (src.width / 2 > tw) {
+      var half = document.createElement('canvas');
+      half.width = Math.round(src.width / 2); half.height = Math.round(src.height / 2);
+      var hx = half.getContext('2d');
+      hx.imageSmoothingQuality = 'high';
+      hx.drawImage(src, 0, 0, half.width, half.height);
+      src = half;
+    }
+    var out = document.createElement('canvas');
+    out.width = tw; out.height = th;
+    var ox = out.getContext('2d');
+    ox.imageSmoothingQuality = 'high';
+    ox.drawImage(src, 0, 0, tw, th);
+    return { rgba: ox.getImageData(0, 0, tw, th).data, w: tw, h: th };
+  }
+
+  // Put the picture block at the end of the entry's summary, so it becomes
+  // the entry's portrait.
+  function insertPic(text, block) {
+    var lines = text.replace(/\r/g, '').split('\n'), inCode = false, at = lines.length, pastHead = false;
+    for (var i = 0; i < lines.length; i++) {
+      if (!pastHead) { if (!lines[i].trim()) pastHead = true; continue; }
+      if (/^```/.test(lines[i])) inCode = !inCode;
+      if (!inCode && /^##\s/.test(lines[i])) { at = i; break; }
+    }
+    while (at > 0 && !lines[at - 1].trim()) at--;
+    lines.splice(at, 0, '', block);
+    return lines.join('\n').replace(/\n{3,}/g, '\n\n');
+  }
+
+  function download(name, text) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown' }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  function pictureTool(file) {
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function () {
+      var card = el('div', 'card tool');
+      card.appendChild(el('h2', null, 'New picture'));
+      card.appendChild(el('p', 'note', esc(file.name) + ' · ' + img.naturalWidth + ' × ' + img.naturalHeight));
+
+      var form = el('div', 'controls');
+      function select(id, label, options, value) {
+        var wrap = el('label', null, '<span>' + label + '</span>');
+        var s = el('select');
+        s.id = id;
+        options.forEach(function (o) {
+          var opt = el('option', null, esc(o[1]));
+          opt.value = o[0];
+          if (String(o[0]) === String(value)) opt.selected = true;
+          s.appendChild(opt);
+        });
+        wrap.appendChild(s);
+        form.appendChild(wrap);
+        return s;
+      }
+      var frame = select('pic-frame', 'Framing', Object.keys(FRAMES).map(function (k) { return [k, FRAMES[k].label]; }), 'square');
+      var width = select('pic-width', 'Width', [[48, '48 px'], [64, '64 px'], [96, '96 px'], [128, '128 px']], 96);
+      var colours = select('pic-colours', 'Colours', [[16, '16'], [8, '8'], [4, '4'], [2, '2']], 16);
+      var dither = select('pic-dither', 'Shading', [['0', 'Flat'], ['1', 'Dithered']], '0');
+      var entry = select('pic-entry', 'Entry', kb.entries.map(function (e) { return [e.id, e.title]; }).sort(function (a, b) { return a[1].localeCompare(b[1]); }), guessEntry(file.name));
+      var capWrap = el('label', 'wide', '<span>Caption</span>');
+      var caption = el('input');
+      caption.id = 'pic-caption';
+      caption.type = 'text';
+      caption.placeholder = 'What the picture shows, in words';
+      capWrap.appendChild(caption);
+      form.appendChild(capWrap);
+      card.appendChild(form);
+
+      var views = el('div', 'views');
+      var colourView = el('figure', 'pic');
+      var rawView = el('pre', 'raw');
+      views.appendChild(colourView);
+      views.appendChild(rawView);
+      card.appendChild(views);
+      var size = el('p', 'note');
+      card.appendChild(size);
+
+      var block = '';
+      function update() {
+        var s = sample(img, frame.value, +width.value);
+        var text = metosPic.encode(s.rgba, s.w, s.h, { colors: +colours.value, dither: dither.value === '1' });
+        var p = metosPic.parse(text);
+        colourView.innerHTML = '';
+        var shown = picToCanvas(p);
+        shown.style.aspectRatio = p.w + '/' + p.h;
+        colourView.appendChild(shown);
+        colourView.appendChild(el('figcaption', null, 'As browsers and screens draw it'));
+        rawView.textContent = p.rows.join('\n');
+        requestAnimationFrame(function () {
+          // monospace characters are about 0.6 em wide: fit the row to the box
+          rawView.style.fontSize = ((rawView.clientWidth - 8) / (p.w * 0.6)) + 'px';
+        });
+        block = '```pic ' + caption.value.trim() + '\n' + text + '\n```';
+        size.textContent = 'Right: the same picture as raw text, as a device with no graphics shows it. ' +
+          p.w + ' × ' + p.h + ' px, ' + Object.keys(p.colors).length + ' colours, ' + block.length.toLocaleString() + ' characters.';
+      }
+      [frame, width, colours, dither].forEach(function (s) { s.addEventListener('change', update); });
+      caption.addEventListener('input', function () { block = block.replace(/^```pic[^\n]*/, '```pic ' + caption.value.trim()); });
+      update();
+
+      var actions = el('div', 'chips');
+      actions.appendChild(chip('Add to entry', function () {
+        var id = entry.value, f = files.filter(function (x) { return x.name.replace(/\.[^.]+$/, '') === id; })[0];
+        if (!f) return;
+        f.text = insertPic(f.text, block);
+        rebuild();
+        show(metos.open(kb, id), byId(id).title + ' (with picture)');
+        say('note', 'Added for this session. Download the entry to keep it, and replace the file in kb/.');
+      }));
+      actions.appendChild(chip('Download entry', function () {
+        var id = entry.value, f = files.filter(function (x) { return x.name.replace(/\.[^.]+$/, '') === id; })[0];
+        if (!f) return;
+        download(f.name, /```pic/.test(f.text) ? f.text : insertPic(f.text, block));
+      }));
+      actions.appendChild(chip('Copy text', function (ev) {
+        var btn = ev.target;
+        function fallback() {
+          var t = el('textarea', 'copybox');
+          t.value = block;
+          t.readOnly = true;
+          card.appendChild(t);
+          t.select();
+          btn.textContent = 'Selected below';
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(block).then(function () { btn.textContent = 'Copied'; }, fallback);
+        } else fallback();
+      }));
+      card.appendChild(actions);
+
+      log.appendChild(card);
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    img.onerror = function () { say('note', 'That file could not be read as a picture.'); };
+    img.src = url;
+  }
+
+  // "dandelion.jpg" -> the Dandelion entry, when the name matches
+  function guessEntry(name) {
+    var words = metos.tokens(name.replace(/\.[^.]+$/, ''));
+    for (var i = 0; i < kb.entries.length; i++) {
+      var e = kb.entries[i];
+      for (var k = 0; k < e.names.length; k++) {
+        if (e.names[k].length === 1 && words.indexOf(e.names[k][0]) >= 0) return e.id;
+      }
+    }
+    return kb.entries.length ? kb.entries[0].id : '';
+  }
+
   // ---- wiring --------------------------------------------------------------
 
   document.getElementById('ask').addEventListener('submit', function (ev) {
@@ -286,13 +476,27 @@
   });
   document.getElementById('folder').addEventListener('change', function (ev) { openFolder(ev.target.files); ev.target.value = ''; });
   document.getElementById('files').addEventListener('change', function (ev) { addFiles(ev.target.files); ev.target.value = ''; });
+  document.getElementById('photo').addEventListener('change', function (ev) {
+    if (ev.target.files[0]) pictureTool(ev.target.files[0]);
+    ev.target.value = '';
+  });
+
+  // Dropped photos go to the picture tool, dropped text files become entries.
+  function handleDrop(list) {
+    var text = [];
+    Array.prototype.forEach.call(list, function (f) {
+      if (/^image\//.test(f.type)) pictureTool(f);
+      else text.push(f);
+    });
+    if (text.length) addFiles(text);
+  }
 
   document.addEventListener('dragover', function (ev) { ev.preventDefault(); document.body.classList.add('drop'); });
   document.addEventListener('dragleave', function (ev) { if (!ev.relatedTarget) document.body.classList.remove('drop'); });
   document.addEventListener('drop', function (ev) {
     ev.preventDefault();
     document.body.classList.remove('drop');
-    addFiles(ev.dataTransfer.files);
+    handleDrop(ev.dataTransfer.files);
   });
 
   if (window.METOS_BUNDLE) {

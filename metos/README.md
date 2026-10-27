@@ -81,6 +81,43 @@ Markdown keeps drawings possible, at two levels:
 
 `kb/fire.md` and `kb/water-filter.md` show both.
 
+## Pictures from photos
+
+A photo can become a picture that lives inside the entry, as text, and shows on any device.
+
+In the browser, use **add picture** (or drop a photo on the page). Choose framing, width, colours and shading, write a caption, then **Add to entry** to see it in the card, and **Download entry** to keep the updated `.md` in `kb/`.
+
+The result is a ```` ```pic ```` block:
+
+````
+```pic Dandelion plant: yellow flower heads and toothed leaves
+64x66
+@ 1b3a12
+# 2e5a1f
+...
+. ffffff
+
+..........:-::---:--==oooooooooo*ooo--:....
+```
+````
+
+- First line: width x height.
+- Then the palette: one character and one colour per line, darkest first, up to 16.
+- A blank line, then one row of characters per row of pixels.
+
+Each target shows what it can:
+
+| target | shows |
+|---|---|
+| browser, phone, ESP32 beacon | the picture in colour |
+| colour terminal (`cli.js`) | the picture in coloured half blocks |
+| any text display | the raw rows, which read as rough ASCII art because characters follow brightness |
+| C or Forth with a screen | read the palette, then paint one pixel per character |
+
+A picture placed in the summary (where **Add to entry** puts it) is the entry's portrait and shows on every card for that entry. Its caption stays searchable; its pixels do not.
+
+Sizes for scale: 48 px wide is about 2.5 KB of text, 96 px about 10 KB. Bright colours like yellow look pale in the raw text, because only brightness survives there.
+
 ## Teaching it words
 
 `vocab.txt` holds everything metos understands about intent: which words mean "how to", which mean "is it safe", which point to which section, which words count as which tag, and which words to ignore. It is plain text, one list per line. When a question goes wrong, tick **why this answer** (or use `--why` in the terminal) to see the scores, then fix the entry's `aka` or a line in `vocab.txt`.
