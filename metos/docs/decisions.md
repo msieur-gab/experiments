@@ -43,3 +43,9 @@ Newest last. Each entry: what was decided, why, and what was rejected.
 **redbean built from source** (Cosmopolitan 4.0.2) as one file for x86-64 and 64-bit ARM, because an x86-only build refuses to start on Apple Silicon and ARM Linux. On Apple Silicon the first run needs Apple's command line tools.
 
 **Handoff to Claude Code on the desktop** for real-hardware tests: `HANDOFF.md`.
+
+**Text stays; pictures support it, several per entry.** Gab considered a picture-first metos (if knowledge and language are lost, the visual proof is what lets someone tell one plant from another) and settled on the balance of old botanical books: a drawing with two or three views to tell plants apart, and text carrying the knowledge. So: several pictures per entry (views such as whole plant, leaf, flower, root, fruit), especially where lookalikes are dangerous. Not hundreds of pictures, not a visual-only system.
+
+**Scope widens beyond plants:** trees, fruits, roots, everything in nature people need to recognise.
+
+**Idea to explore: a season calendar from observation.** Knowing the season from what you see and feel, without a date. Two references: the Chinese 24 solar terms (二十四节气), named for weather and nature, each split into three pentads (72 in all) mostly named after nature observations, written for the North China Plain climate, UNESCO intangible heritage since 2016; and the German phenological calendar (DWD data), ten seasons each started by an indicator plant (hazel flowering starts Vorfrühling, forsythia Erstfrühling, apple blossom Vollfrühling, elder flowering Frühsommer, lime flowering Hochsommer, first early apples Spätsommer, elderberries ripe Frühherbst, acorns ripe Vollherbst, oak leaves colouring Spätherbst, oak leaf fall Winter).
