@@ -16,7 +16,7 @@ var here = __dirname;
 var kbDir = path.join(here, 'kb');
 
 var files = fs.readdirSync(kbDir)
-  .filter(function (f) { return /\.(md|txt)$/i.test(f); })
+  .filter(function (f) { return /\.(md|txt)$/i.test(f) && !/^_/.test(f); })
   .sort()
   .map(function (f) { return { name: f, text: fs.readFileSync(path.join(kbDir, f), 'utf8') }; });
 

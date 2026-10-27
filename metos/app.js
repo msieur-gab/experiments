@@ -55,7 +55,8 @@
       var rel = (f.webkitRelativePath || f.name).split('/').slice(1).join('/');
       var rel2 = rel.replace(/^kb\//, '');
       if (/(^|\/)vocab\.txt$/i.test(rel)) { vocabFile = f; return; }
-      if (/\.(md|txt)$/i.test(f.name) && rel2.indexOf('/') < 0 && !/^readme\./i.test(f.name)) {
+      // files starting with _ (like _template.md) are not entries
+      if (/\.(md|txt)$/i.test(f.name) && rel2.indexOf('/') < 0 && !/^(readme\.|_)/i.test(f.name)) {
         (rel !== rel2 ? inKb : top).push(f);
       }
       if (/\.(svg|png|jpe?g|gif|webp)$/i.test(f.name)) newImages[rel2] = URL.createObjectURL(f);
@@ -226,6 +227,7 @@
       var other = byId(id);
       if (other) chips.appendChild(chip('→ ' + other.title, function () { show(metos.open(kb, id), other.title); }, 'see'));
     });
+    if (window.metosEditor) chips.appendChild(chip('✎ edit', function () { metosEditor.open(e.id); }, 'edit'));
     if (chips.childNodes.length) card.appendChild(chips);
     if (e.source) card.appendChild(el('div', 'src', 'Source: ' + esc(e.source)));
     addWhy(card, r.u);
@@ -350,7 +352,10 @@
     a.remove();
   }
 
-  function pictureTool(file) {
+  // opts.onUse(block): called instead of adding to an entry (used by the
+  // entry editor); opts.container: where to show the tool (default: the log)
+  function pictureTool(file, opts) {
+    opts = opts || {};
     var url = URL.createObjectURL(file), img = new Image();
     img.onload = function () {
       var card = el('div', 'card tool');
@@ -376,7 +381,7 @@
       var width = select('pic-width', 'Width', [[48, '48 px'], [64, '64 px'], [96, '96 px'], [128, '128 px']], 96);
       var colours = select('pic-colours', 'Colours', [[16, '16'], [8, '8'], [4, '4'], [2, '2']], 16);
       var dither = select('pic-dither', 'Shading', [['0', 'Flat'], ['1', 'Dithered']], '0');
-      var entry = select('pic-entry', 'Entry', kb.entries.map(function (e) { return [e.id, e.title]; }).sort(function (a, b) { return a[1].localeCompare(b[1]); }), guessEntry(file.name));
+      var entry = opts.onUse ? null : select('pic-entry', 'Entry', kb.entries.map(function (e) { return [e.id, e.title]; }).sort(function (a, b) { return a[1].localeCompare(b[1]); }), guessEntry(file.name));
       var capWrap = el('label', 'wide', '<span>Caption</span>');
       var caption = el('input');
       caption.id = 'pic-caption';
@@ -419,6 +424,14 @@
       update();
 
       var actions = el('div', 'chips');
+      if (opts.onUse) {
+        actions.appendChild(chip('Use this picture', function () { opts.onUse(block); card.remove(); }));
+        actions.appendChild(chip('Cancel', function () { card.remove(); }));
+        card.appendChild(actions);
+        (opts.container || log).appendChild(card);
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
       actions.appendChild(chip('Add to entry', function () {
         var id = entry.value, f = files.filter(function (x) { return x.name.replace(/\.[^.]+$/, '') === id; })[0];
         if (!f) return;
@@ -498,6 +511,15 @@
     document.body.classList.remove('drop');
     handleDrop(ev.dataTransfer.files);
   });
+
+  // What the entry editor (editor.js) needs from the app.
+  window.metosApp = {
+    get kb() { return kb; },
+    get files() { return files; },
+    get vocabText() { return vocabText; },
+    upsert: upsert, rebuild: rebuild, show: show, say: say, md: md, el: el, esc: esc, chip: chip,
+    pictureTool: pictureTool, download: download
+  };
 
   if (window.METOS_BUNDLE) {
     files = window.METOS_BUNDLE.files.slice();

@@ -1,7 +1,7 @@
 // Keeps metos working offline once it has been opened over http(s).
 // Bump the version after changing files so phones pick up the new ones.
-var CACHE = 'metos-v2';
-var FILES = ['./', 'index.html', 'app.js', 'engine.js', 'pic.js', 'kb.js', 'manifest.json', 'kb/img/fire-lay.svg'];
+var CACHE = 'metos-v3';
+var FILES = ['./', 'index.html', 'app.js', 'engine.js', 'pic.js', 'editor.js', 'kb.js', 'manifest.json', 'kb/img/fire-lay.svg'];
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); }));

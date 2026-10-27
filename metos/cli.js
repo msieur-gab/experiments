@@ -20,7 +20,7 @@ var kbDir = path.join(here, 'kb');
 
 function loadKB() {
   var files = fs.readdirSync(kbDir)
-    .filter(function (f) { return /\.(md|txt)$/i.test(f); })
+    .filter(function (f) { return /\.(md|txt)$/i.test(f) && !/^_/.test(f); })
     .map(function (f) { return { name: f, text: fs.readFileSync(path.join(kbDir, f), 'utf8') }; });
   var vocabPath = path.join(here, 'vocab.txt');
   var vocab = fs.existsSync(vocabPath) ? fs.readFileSync(vocabPath, 'utf8') : '';

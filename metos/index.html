@@ -17,6 +17,8 @@
     --warn-bg: #f6e3d3;
     --warn-ink: #7a2e0e;
     --code: #efe8da;
+    --ok: #3f6b2a;
+    --ok-bg: #e4ecd3;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     --serif: Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
   }
@@ -31,6 +33,8 @@
       --warn-bg: #3a2418;
       --warn-ink: #f0b48f;
       --code: #2c2924;
+      --ok: #b7d39a;
+      --ok-bg: #26301c;
     }
   }
   * { box-sizing: border-box; }
@@ -41,7 +45,7 @@
   header { padding: 20px 0 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
   h1 { font-family: var(--mono); font-size: 22px; font-weight: 600; margin: 0; letter-spacing: 0.02em; }
   h1 small { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 8px; letter-spacing: 0; }
-  .tools { display: flex; gap: 8px; font-family: var(--mono); font-size: 13px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; font-family: var(--mono); font-size: 13px; }
   .tools label, .tools button {
     border: 1px solid var(--line); background: transparent; color: var(--muted);
     padding: 4px 10px; border-radius: 4px; cursor: pointer; font: inherit;
@@ -89,6 +93,75 @@
   }
   .copybox { width: 100%; height: 120px; margin-top: 10px; font: 11px var(--mono); }
 
+  /* entry editor: a full-screen sheet over the conversation */
+  html.sheet-open, html.sheet-open body { overflow: hidden; }
+  .sheet {
+    position: fixed; inset: 0; z-index: 20; overflow-y: auto; background: var(--paper);
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  .sheet-in { max-width: 1040px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .sheet-bar {
+    position: sticky; top: 0; z-index: 2; background: var(--paper); border-bottom: 1px solid var(--line);
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .sheet-bar .sheet-in { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 12px; }
+  .sheet-bar h2 { font-family: var(--mono); font-size: 18px; font-weight: 600; margin: 0; }
+  .sheet-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; padding-block: 16px; }
+  @media (min-width: 880px) {
+    .sheet-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; }
+    .ed-side { position: sticky; top: 64px; max-height: calc(100vh - 80px); overflow-y: auto; }
+  }
+  .ed-form, .ed-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+  .ed-group { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px 14px; margin: 0; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .ed-group legend { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); padding: 0 6px; }
+  .ed-field { display: flex; flex-direction: column; gap: 3px; }
+  .ed-label { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+  .ed-hint { font-size: 14px; color: var(--muted); line-height: 1.35; margin: 0; }
+  .sheet input[type=text], .sheet textarea, .sheet select {
+    font: 16px var(--serif); color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; width: 100%; min-width: 0;
+  }
+  .sheet textarea { resize: vertical; line-height: 1.45; }
+  .sheet select { font-family: var(--mono); font-size: 14px; }
+  .sheet input:focus, .sheet textarea:focus, .sheet select:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+  .sheet input[readonly] { color: var(--muted); }
+  .ed-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip.small { font-size: 12px; padding: 2px 8px; }
+  .ed-group > .chip { align-self: flex-start; }
+  .ed-pick { max-width: 320px; }
+  .ed-sections { display: flex; flex-direction: column; gap: 12px; }
+  .ed-section { display: flex; flex-direction: column; gap: 6px; }
+  .ed-sec-top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .ed-sec-top select { flex: 1 1 200px; width: auto; }
+  .ed-sec-top input { flex: 1 1 140px; width: auto; }
+  .ed-picture .body img { max-width: 220px; }
+  .ghost { font: 13px var(--mono); background: transparent; color: var(--muted); border: 1px solid var(--line); border-radius: 4px; padding: 5px 10px; cursor: pointer; }
+  .ghost:hover { color: var(--ink); border-color: var(--muted); }
+  .ghost.small { padding: 3px 8px; font-size: 12px; }
+  .primary { font: 15px var(--mono); background: var(--accent); color: var(--paper); border: 0; border-radius: 6px; padding: 9px 16px; cursor: pointer; }
+  .ed-panel h3 { font-family: var(--mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 6px; font-weight: 600; }
+  .ed-panel .card .sec { margin-top: 12px; }
+  .ed-result { margin-top: 8px; font-size: 15px; border-radius: 4px; padding: 0; }
+  .ed-result.c-ok, .ed-result.c-warn, .ed-result.c-bad { padding: 8px 10px; }
+  .ed-result.c-ok { background: var(--ok-bg); color: var(--ok); }
+  .ed-result.c-warn { background: var(--code); color: var(--ink); }
+  .ed-result.c-bad { background: var(--warn-bg); color: var(--warn-ink); }
+  .ed-why { display: block; font: 12px var(--mono); opacity: 0.8; margin-top: 3px; }
+  .ed-checks { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+  .ed-checks li::before { font-family: var(--mono); margin-right: 6px; }
+  .ed-checks li.c-ok { color: var(--ok); }
+  .ed-checks li.c-ok::before { content: "✓"; }
+  .ed-checks li.c-warn { color: var(--muted); }
+  .ed-checks li.c-warn::before { content: "·"; }
+  .ed-checks li.c-bad { color: var(--warn-ink); }
+  .ed-checks li.c-bad::before { content: "!"; }
+  .ed-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ed-actions .chip { margin: 0; }
+  .ed-status { font-size: 14px; color: var(--muted); margin: 0; min-height: 1em; }
+  .ed-raw summary { cursor: pointer; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .ed-raw pre { background: var(--code); border-radius: 4px; padding: 10px; font: 12px/1.4 var(--mono); white-space: pre-wrap; word-break: break-word; max-height: 360px; overflow: auto; }
+  .chip.edit { border-style: dotted; color: var(--muted); }
+
   .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
   .chip {
     font-family: var(--mono); font-size: 13px; border: 1px solid var(--line); background: transparent;
@@ -128,6 +201,7 @@
         <label title="Read a kb folder directly, with its images">open folder<input id="folder" type="file" webkitdirectory multiple></label>
         <label title="Add .md or .txt entries">add entries<input id="files" type="file" accept=".md,.txt,text/markdown,text/plain" multiple></label>
         <label title="Turn a photo into a picture any device can show">add picture<input id="photo" type="file" accept="image/*"></label>
+        <button id="new-entry" type="button" title="Write a new entry by hand">new entry</button>
       </div>
     </header>
     <div id="log"></div>
@@ -144,5 +218,7 @@
   <script src="pic.js"></script>
   <script src="kb.js"></script>
   <script src="app.js"></script>
+  <script src="editor.js"></script>
+  <script>document.getElementById('new-entry').addEventListener('click', function () { metosEditor.open(); });</script>
 </body>
 </html>

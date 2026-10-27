@@ -38,6 +38,22 @@ Drop a `.md` or `.txt` file into `kb/`. Then either:
 
 **add entries** in the browser (or dragging files onto the page) adds them for the session only.
 
+### Writing entries by hand
+
+**new entry** opens a form; **✎ edit** on any card opens the same form, filled in.
+
+- Fields for title, other names, tags, warning, source and related entries, a summary, an optional picture, and sections picked from the names metos understands.
+- **Try a question**: type what someone would ask, and it tells you whether metos finds this entry, which section opens, or which other entry wins instead. When it says "does not find it", add the missing words to Other names.
+- A live preview of the whole entry, and the Markdown it will write.
+
+Saving:
+
+- **Add to knowledge base**: usable straight away, for this session.
+- **Download .md**: put the file in `kb/`.
+- **Save to folder** (desktop Chrome and Edge): pick the `metos` folder once. It writes the entry into `kb/` and refreshes `kb.js`, so no build step is needed. Picking the `kb` folder alone also works, but then run `build.js`.
+
+Without the app, copy `kb/_template.md`, rename it (for example `yarrow.md`), and fill it in with any text editor. Files starting with `_` are ignored, so the template never shows up as an entry.
+
 ## Entry format
 
 ```
