@@ -227,7 +227,7 @@
       var other = byId(id);
       if (other) chips.appendChild(chip('→ ' + other.title, function () { show(metos.open(kb, id), other.title); }, 'see'));
     });
-    if (window.metosEditor) chips.appendChild(chip('✎ edit', function () { metosEditor.open(e.id); }, 'edit'));
+    if (window.metosEditor) chips.appendChild(chip('edit', function () { metosEditor.open(e.id); }, 'edit'));
     if (chips.childNodes.length) card.appendChild(chips);
     if (e.source) card.appendChild(el('div', 'src', 'Source: ' + esc(e.source)));
     addWhy(card, r.u);
@@ -412,8 +412,8 @@
         colourView.appendChild(el('figcaption', null, 'As browsers and screens draw it'));
         rawView.textContent = p.rows.join('\n');
         requestAnimationFrame(function () {
-          // monospace characters are about 0.6 em wide: fit the row to the box
-          rawView.style.fontSize = ((rawView.clientWidth - 8) / (p.w * 0.6)) + 'px';
+          // Departure Mono characters are 0.636 em wide: fit the row to the box
+          rawView.style.fontSize = ((rawView.clientWidth - 8) / (p.w * 0.636)) + 'px';
         });
         block = '```pic ' + caption.value.trim() + '\n' + text + '\n```';
         size.textContent = 'Right: the same picture as raw text, as a device with no graphics shows it. ' +
