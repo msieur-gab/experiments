@@ -14,6 +14,7 @@ Owner: Gab (msieur-gab). It's a sibling of his ptiLU / TermNL work on small, aut
 
 | path | what |
 |---|---|
+| `HANDOFF.md` | current state of the USB stick version and what to test next |
 | `README.md` | how to use it, the entry format, how it decides |
 | `docs/vision.md` | why it exists, principles, what it must never do |
 | `docs/decisions.md` | dated log of decisions, with the reason for each |
@@ -23,6 +24,8 @@ Owner: Gab (msieur-gab). It's a sibling of his ptiLU / TermNL work on small, aut
 | `kb/` | the knowledge: one Markdown entry per file, `kb/img/` for images |
 | `vocab.txt` | every word metos understands about intent and sections |
 | `engine.js` | understanding and answering; the part to port to C and Forth |
+| `server/` | `init.lua` (the stick server inside metos.com), the redbean binary, the stick's READ-ME-FIRST |
+| `package.sh` | builds `dist/METOS/`, the folder to copy onto a USB stick |
 
 ## Rules that hold everywhere
 

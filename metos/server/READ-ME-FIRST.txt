@@ -1,0 +1,71 @@
+METOS
+=====
+
+A small knowledge base for when things break down: water, wild plants,
+growing food, fire and shelter. Ask in plain words. It only shows what its
+entries say, and tells you when it doesn't know.
+
+
+START IT
+--------
+
+Double-click metos.com
+
+  It opens metos in your web browser. Keep the small black window open
+  while you use it; closing it stops metos.
+
+  Windows: if "Windows protected your PC" appears, click "More info",
+  then "Run anyway".
+
+  Mac: if it says the app can't be opened, right-click metos.com, choose
+  Open, then Open again. If that does not work, open the Terminal app and
+  type:   sh /Volumes/<your stick>/METOS/metos.com
+  (or drag metos.com into the Terminal window after typing "sh ").
+
+  Linux: in a terminal, run   ./metos.com
+  If that fails, run   sh ./metos.com
+
+  Keep a spare copy of metos.com on the stick. The first time it runs on a
+  computer it adapts itself to that system, and a fresh copy is the safe
+  way back if a different computer then refuses it.
+
+
+IF IT WILL NOT START
+--------------------
+
+Open index.html in any web browser instead. Everything can be read and
+searched. New entries can be written but are saved by downloading them,
+then moving the file into the kb folder.
+
+
+WITHOUT ANY PROGRAM
+-------------------
+
+Every entry is a plain text file in the kb folder. Open CONTENTS.md to see
+the list, then open any file in kb with a text editor.
+
+
+ADDING KNOWLEDGE
+----------------
+
+With metos.com running: click "new entry", fill in the form, then
+"Save to stick". The file is written into kb.
+
+By hand: copy kb/_template.md, rename it (for example yarrow.md), fill it
+in with any text editor, and put it in kb.
+
+
+PHONES ON THE SAME WI-FI (optional)
+-----------------------------------
+
+Start it from a terminal with:   ./metos.com -l 0.0.0.0
+Phones on the same network can then open http://<this computer's address>:8080
+They can read and ask, but only this computer can save entries.
+
+
+SAFETY
+------
+
+metos does not replace local, expert knowledge. Never eat a wild plant
+you cannot identify with complete certainty. Entries marked "verify before
+relying on it" have not yet been checked against a primary source.

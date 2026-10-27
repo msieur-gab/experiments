@@ -357,15 +357,16 @@
     side.appendChild(checks);
 
     var actions = el('div', 'ed-actions');
-    var addBtn = el('button', 'primary', 'Add to knowledge base');
+    // Running from the stick's own server: saving goes straight onto the stick.
+    var addBtn = el('button', 'primary', A.server ? 'Save to stick' : 'Add to knowledge base');
     addBtn.type = 'button';
-    addBtn.addEventListener('click', addToKB);
+    addBtn.addEventListener('click', A.server ? saveToStick : addToKB);
     actions.appendChild(addBtn);
     actions.appendChild(A.chip('Download .md', function () {
       if (!ready()) return;
       A.download(fileName(), serialize(state));
     }));
-    if (window.showDirectoryPicker) actions.appendChild(A.chip(folder ? 'Save to folder' : 'Save to folder…', saveToFolder));
+    if (window.showDirectoryPicker && !A.server) actions.appendChild(A.chip(folder ? 'Save to folder' : 'Save to folder…', saveToFolder));
     side.appendChild(actions);
     var status = el('p', 'ed-status');
     status.setAttribute('aria-live', 'polite');
@@ -498,6 +499,22 @@
     close();
     A.show(metos.open(A.kb, id), title);
     A.say('note', 'Added for this session. Use Download or Save to folder in the editor to keep it.');
+  }
+
+  function saveToStick() {
+    if (!ready()) return;
+    var p = sheet._parts, name = fileName(), text = serialize(state), title = state.title;
+    p.addBtn.disabled = true;
+    p.status.textContent = 'Saving…';
+    A.saveEntry(name, text).then(function () {
+      var id = commit();
+      close();
+      A.show(metos.open(A.kb, id), title);
+      A.say('note', 'Saved kb/' + name + ' on the stick.');
+    }, function (err) {
+      p.addBtn.disabled = false;
+      p.status.textContent = 'Could not save on the stick: ' + err.message + ' Use Download .md instead.';
+    });
   }
 
   // Desktop Chrome and Edge: write straight into the folder. Pick the metos

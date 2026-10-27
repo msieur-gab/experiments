@@ -438,7 +438,12 @@
         f.text = insertPic(f.text, block);
         rebuild();
         show(metos.open(kb, id), byId(id).title + ' (with picture)');
-        say('note', 'Added for this session. Download the entry to keep it, and replace the file in kb/.');
+        if (server) {
+          saveEntry(f.name, f.text).then(function () { say('note', 'Saved kb/' + f.name + ' on the stick.'); },
+            function (err) { say('note', 'Could not save on the stick: ' + err.message + ' Use Download entry instead.'); });
+        } else {
+          say('note', 'Added for this session. Download the entry to keep it, and replace the file in kb/.');
+        }
       }));
       actions.appendChild(chip('Download entry', function () {
         var id = entry.value, f = files.filter(function (x) { return x.name.replace(/\.[^.]+$/, '') === id; })[0];
@@ -512,23 +517,59 @@
     handleDrop(ev.dataTransfer.files);
   });
 
+  // ---- the stick's own server (metos.com) ---------------------------------
+  // When metos.com serves the page, entries come live from kb/ on the stick
+  // and saving writes back to it. Opened as a plain file, the page uses kb.js.
+
+  var server = false;
+
+  function saveEntry(name, text) {
+    return fetch('api/entry?name=' + encodeURIComponent(name), {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
+      body: text
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) throw new Error(j.error || ('The stick answered ' + r.status + '.'));
+        return j;
+      });
+    });
+  }
+
   // What the entry editor (editor.js) needs from the app.
   window.metosApp = {
     get kb() { return kb; },
     get files() { return files; },
     get vocabText() { return vocabText; },
+    get server() { return server; },
     upsert: upsert, rebuild: rebuild, show: show, say: say, md: md, el: el, esc: esc, chip: chip,
-    pictureTool: pictureTool, download: download
+    pictureTool: pictureTool, download: download, saveEntry: saveEntry
   };
 
   if (window.METOS_BUNDLE) {
     files = window.METOS_BUNDLE.files.slice();
     vocabText = window.METOS_BUNDLE.vocab;
   }
-  rebuild();
-  intro();
-  if (!files.length) say('note', 'No entries loaded. Use “open folder” to pick the kb folder, or run build.js.');
-  input.focus();
+
+  function start() {
+    rebuild();
+    if (server) countEl.textContent += ' · on this stick';
+    intro();
+    if (!files.length) say('note', 'No entries loaded. Use “open folder” to pick the kb folder, or run build.js.');
+    input.focus();
+  }
+
+  if (/^https?:$/.test(location.protocol)) {
+    fetch('api/kb', { cache: 'no-store' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (b) {
+        if (b && b.files) { files = b.files; vocabText = b.vocab || vocabText; server = true; }
+      })
+      .catch(function () {})
+      .then(start);
+  } else {
+    start();
+  }
 
   // Offline install when served over http(s). From a USB stick (file://)
   // everything is already local, so no service worker is needed.

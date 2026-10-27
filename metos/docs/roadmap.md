@@ -8,9 +8,9 @@ Each layer covers what the one before cannot.
 
 | # | Option | Runs on | Needs | Status |
 |---|---|---|---|---|
-| 0 | **The files themselves** + a generated contents page | anything that shows text | nothing | to do |
+| 0 | **The files themselves** + `CONTENTS.md` | anything that shows text | nothing | working |
 | 1 | **Browser page** (`index.html` + `kb.js`) | almost any computer | a browser; unreliable from USB on phones | working |
-| 2 | **Self-running USB package** | Windows, macOS, Linux | see options below | next |
+| 2 | **Self-running USB package**: `metos.com` (redbean) serving the stick, saving onto it | Windows, macOS, Linux, BSDs; x86-64 and 64-bit ARM | nothing installed; Apple Silicon needs Apple's command line tools once | built; real-hardware tests next (`HANDOFF.md`) |
 | 3 | **One portable binary**: engine in C, built with Cosmopolitan | Linux, macOS, Windows, BSDs on x86-64 and Arm64 | nothing installed | planned |
 | 4 | **ESP32 knowledge beacon**: board + SD card makes its own Wi-Fi and serves the page; phones join and ask | any phone or laptop with Wi-Fi | €5–10 board, battery | idea |
 | 5 | **Bootable stick / Forth**: tiny Linux or Dusk OS booting into metos | old PCs, Pi | the most work | later |

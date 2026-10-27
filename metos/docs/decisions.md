@@ -37,3 +37,9 @@ Newest last. Each entry: what was decided, why, and what was rejected.
 **Typeface: Departure Mono, everywhere.** A pixel monospace (SIL OFL), matching the pixel pictures and the terminal spirit. Embedded as a data URI so it loads from `file://`. Sizes snapped to its 11 px grid (11, 16.5, 22).
 
 **Project memory lives in the repo** (`CLAUDE.md`, `docs/`) so any Claude instance can pick up the context.
+
+**USB stick: redbean app with a plain-file fallback.** Gab chose this from four options (plain stick, redbean app, C terminal program, bootable stick). `metos.com` is redbean with `server/init.lua` inside. It serves the stick's own folder, reads `kb/` live, saves entries from the editor onto the stick in any browser, and refreshes `kb.js` and `CONTENTS.md` so opening `index.html` without the program still works. Only the computer itself may save; other devices can read. The C terminal program comes next as the no-browser layer.
+
+**redbean built from source** (Cosmopolitan 4.0.2) as one file for x86-64 and 64-bit ARM, because an x86-only build refuses to start on Apple Silicon and ARM Linux. On Apple Silicon the first run needs Apple's command line tools.
+
+**Handoff to Claude Code on the desktop** for real-hardware tests: `HANDOFF.md`.

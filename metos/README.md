@@ -6,7 +6,9 @@ The name joins *mētis*, the Greek word for practical, hands-on know-how, and *O
 
 ## Try it
 
-**From a USB stick or SD card, no server:** open `index.html` in any browser.
+**On a USB stick:** run `sh package.sh`, copy `dist/METOS/` onto the stick, then double-click `metos.com` on the stick. It opens metos in the browser, reads `kb/` straight from the stick, and saves new entries onto it. Works on Windows, macOS and Linux, x86-64 and 64-bit ARM, with nothing installed. See `server/README.md` and the stick's `READ-ME-FIRST.txt`.
+
+**Without any program:** open `index.html` in any browser.
 
 **In a terminal:**
 
