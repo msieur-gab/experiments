@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f4efe4">
+<title>metos</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --paper: #f4efe4;
+    --card: #fbf8f1;
+    --ink: #2b2620;
+    --muted: #7a7064;
+    --line: #ddd3c2;
+    --accent: #5b6b3a;
+    --warn-bg: #f6e3d3;
+    --warn-ink: #7a2e0e;
+    --code: #efe8da;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --serif: Charter, "Iowan Old Style", Georgia, "Times New Roman", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #1b1a17;
+      --card: #24221e;
+      --ink: #e9e3d6;
+      --muted: #9a9183;
+      --line: #3a362f;
+      --accent: #a9bb7c;
+      --warn-bg: #3a2418;
+      --warn-ink: #f0b48f;
+      --code: #2c2924;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: var(--serif); font-size: 17px; line-height: 1.5; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 0 16px; }
+
+  header { padding: 20px 0 8px; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  h1 { font-family: var(--mono); font-size: 22px; font-weight: 600; margin: 0; letter-spacing: 0.02em; }
+  h1 small { font-weight: 400; color: var(--muted); font-size: 13px; margin-left: 8px; letter-spacing: 0; }
+  .tools { display: flex; gap: 8px; font-family: var(--mono); font-size: 13px; }
+  .tools label, .tools button {
+    border: 1px solid var(--line); background: transparent; color: var(--muted);
+    padding: 4px 10px; border-radius: 4px; cursor: pointer; font: inherit;
+  }
+  .tools label:hover, .tools button:hover { color: var(--ink); border-color: var(--muted); }
+  .tools input { display: none; }
+
+  #log { padding: 8px 0 140px; }
+  .q { font-family: var(--mono); font-size: 14px; color: var(--muted); margin: 24px 0 8px; }
+  .q::before { content: "> "; color: var(--accent); }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; }
+  .card h2 { font-size: 19px; margin: 0 0 2px; }
+  .card .sec { font-family: var(--mono); font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .warn { background: var(--warn-bg); color: var(--warn-ink); border-radius: 4px; padding: 8px 10px; margin: 10px 0; font-size: 15px; }
+  .warn::before { content: "! "; font-family: var(--mono); font-weight: 700; }
+  .note { color: var(--muted); font-style: italic; font-size: 15px; }
+  .body p { margin: 10px 0; }
+  .body ol, .body ul { margin: 10px 0; padding-left: 22px; }
+  .body li { margin: 4px 0; }
+  .body pre { background: var(--code); border-radius: 4px; padding: 10px; overflow-x: auto; font-family: var(--mono); font-size: 13px; line-height: 1.35; }
+  .body figure { margin: 12px 0; }
+  .body img { max-width: 100%; border-radius: 4px; border: 1px solid var(--line); background: #fff; }
+  .body figcaption { font-size: 14px; color: var(--muted); }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .chip {
+    font-family: var(--mono); font-size: 13px; border: 1px solid var(--line); background: transparent;
+    color: var(--ink); padding: 3px 9px; border-radius: 999px; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.see { border-style: dashed; }
+  .src { font-size: 13px; color: var(--muted); margin-top: 10px; }
+  details { margin-top: 10px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  details pre { white-space: pre-wrap; margin: 6px 0 0; }
+  .list li { margin: 8px 0; }
+  .list button { all: unset; cursor: pointer; font-weight: 600; text-decoration: underline; text-decoration-color: var(--line); }
+  .list button:hover { color: var(--accent); }
+  .list .first { display: block; color: var(--muted); font-size: 15px; }
+
+  .intro { color: var(--muted); margin: 24px 0 8px; }
+
+  form {
+    position: fixed; left: 0; right: 0; bottom: 0; background: var(--paper);
+    border-top: 1px solid var(--line); padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+  }
+  form .wrap { display: flex; gap: 8px; }
+  #q {
+    flex: 1; font: 16px var(--mono); padding: 10px 12px; color: var(--ink);
+    background: var(--card); border: 1px solid var(--line); border-radius: 6px;
+  }
+  #q:focus { outline: none; border-color: var(--accent); }
+  form button { font: 15px var(--mono); padding: 0 16px; border: 0; border-radius: 6px; background: var(--accent); color: var(--paper); cursor: pointer; }
+  .drop { outline: 2px dashed var(--accent); outline-offset: -8px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>metos <small id="count"></small></h1>
+      <div class="tools">
+        <label title="Read a kb folder directly, with its images">open folder<input id="folder" type="file" webkitdirectory multiple></label>
+        <label title="Add .md or .txt entries">add entries<input id="files" type="file" accept=".md,.txt,text/markdown,text/plain" multiple></label>
+      </div>
+    </header>
+    <div id="log"></div>
+  </div>
+
+  <form id="ask" autocomplete="off">
+    <div class="wrap">
+      <input id="q" type="text" placeholder="Ask, e.g. how do I make water safe" aria-label="Question">
+      <button type="submit">ask</button>
+    </div>
+  </form>
+
+  <script src="engine.js"></script>
+  <script src="kb.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

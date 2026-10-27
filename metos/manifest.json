@@ -1,0 +1,9 @@
+{
+  "name": "metos",
+  "short_name": "metos",
+  "description": "A small offline knowledge base you can ask in plain words.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4efe4",
+  "theme_color": "#f4efe4"
+}

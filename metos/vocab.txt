@@ -1,0 +1,38 @@
+# metos vocabulary
+# Everything metos understands about intent lives in this file.
+# Edit it like a KB entry: one line per word list, comma-separated phrases.
+#
+#   intent NAME: phrases that signal what the person wants to do
+#   aspect NAME: phrases that point to a section (## NAME) inside an entry
+#   tag NAME:    other words that mean this tag
+#   stop:        words ignored when matching subjects
+#
+# Phrases are matched as whole words, in order. Longer phrases win.
+
+intent list: list, which, show all, show me all, everything about, all the, what kind of, what are the, options
+intent how: how, how do i, how to, how can i, steps, method, way to, make
+intent safety: safe, is it safe, edible, poison, poisonous, toxic, dangerous, danger, deadly, can i eat, risk
+intent about: what is, tell me about, about, explain, info
+
+aspect identify: identify, recognise, recognize, look like, looks like, tell apart, difference, lookalike, spot
+aspect eat: eat, eating, edible, taste, salad, raw, soup
+aspect cook: cook, cooking, prepare, recipe
+aspect grow: grow, growing, plant out, sow, cultivate, garden
+aspect harvest: harvest, pick, gather, collect, when to pick
+aspect store: store, storing, storage, keep, preserve
+aspect safety: warning, careful, avoid
+aspect use: use, uses, useful, good for, what can i do with
+aspect symptoms: symptom, symptoms, signs, sick, ill
+
+tag water: water, drink, drinking, thirst
+tag food: food, eat, edible, hungry
+tag plant: plant, plants, herb, herbs, weed, weeds
+tag wild: wild, forage, foraging
+tag vegetable: vegetable, vegetables, veg, crop, crops
+tag garden: garden, gardening
+tag fire: fire, fires
+tag warmth: warm, warmth, cold, heat
+tag shelter: shelter, camp
+tag danger: danger, dangerous, deadly, poisonous
+
+stop: a, an, the, is, are, am, i, me, my, we, our, you, it, its, this, that, these, those, to, of, in, on, at, for, with, from, by, and, or, do, does, can, could, should, would, will, be, there, any, some, please, need, want, get, so, if, then, what, which, how, who, when, where, why
