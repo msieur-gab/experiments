@@ -84,8 +84,8 @@
 - leaves in the woods in april smell of garlic when i crush them => wild-garlic
 - can i make pesto with the wild garlic => wild-garlic
 - my wild garlic leaves dont smell at all, still ok to eat? => wild-garlic|deadly-lookalikes !danger
-- deep cut on my hand wont stop bleeding => NONE
-- burned my arm on the stove, should i put butter? => NONE
+- deep cut on my hand wont stop bleeding => clean-and-cover-wounds
+- burned my arm on the stove, should i put butter? => cool-running-water-on-burns
 - how to cook the chanterelles we found => NONE
 - which mushrooms are good to pick in autumn => NONE
 - sirens going on and off outside, what does it mean => NONE

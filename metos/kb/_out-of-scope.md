@@ -2,9 +2,7 @@
 
 Questions metos must not answer, because no entry covers them. They teach the model to say "I don't have that". One per line, starting with "- ". Remove a line once an entry covers it.
 
-- my friend cut his hand deep with a knife its bleeding a lot what do i do
 - how do you put on a tourniquet properly
-- burnt my arm on the pan, ice or cold water??
 - how to tell if an ankle is broken or just sprained
 - how many chest compressions per minute for cpr
 - cpr on a child is it different
@@ -83,7 +81,6 @@ Questions metos must not answer, because no entry covers them. They teach the mo
 - is it safe to eat snow
 - how to grow sweet potatoes from a supermarket one
 - how to make potato vodka
-- nettle rash on my kid's legs how do i soothe it
 - how to get rid of dandelions in my lawn for good
 - how to store garlic bulbs so they dont sprout
 - is the seed bank in svalbard still open

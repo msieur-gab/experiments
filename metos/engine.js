@@ -268,7 +268,7 @@
   // It only chooses which entry to open. The answer is still the entry's own
   // text, and below the thresholds metos asks or says it doesn't know.
 
-  var SURE = 0.5;     // at or above: answer
+  var SURE = 0.4;     // at or above: answer (set on tests/messy.md, 1 Nov 2026)
   var MAYBE = 0.15;   // from here to SURE: ask "do you mean...?"
   var DANGER = 0.08;  // a danger entry this likely is always shown too
   var NONE = '_none'; // the label taught by kb/_out-of-scope.md
