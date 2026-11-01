@@ -79,7 +79,7 @@
 - my father face drooping one side and cant talk properly => NONE !danger
 - fell from ladder, think wrist is broken, very swollen => NONE
 - ate peanut, lips swelling and throat closing => NONE !danger
-- toddler drank bleach from bottle => NONE !danger
+- toddler drank bleach from bottle => poisoning !danger
 - baby 2 months old fever 39 => NONE !danger
 - husband shaking on floor eyes rolling, not answering => NONE !danger
 - how many paracetamol can i give 5 year old => NONE
