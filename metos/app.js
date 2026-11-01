@@ -312,12 +312,117 @@
     return card;
   }
 
+  // ---- screens: home -> topic -> entry ----------------------------------------
+  //
+  // metos is browsed first and asked second: five topics, then short lists,
+  // then the entry. Typing a question is a shortcut to the same entries.
+  // A topic's groups are tag filters, so new entries find their place alone.
+
+  var TOPICS = [
+    { id: 'danger', title: 'Danger', hint: 'know these first', groups: [
+      { title: 'Know these first', tags: ['danger'] }] },
+    { id: 'water', title: 'Water', hint: 'find, clean, store', groups: [
+      { title: 'Water', tags: ['water'] }] },
+    { id: 'warmth', title: 'Warmth & fire', hint: 'fire, shelter, cold', groups: [
+      { title: 'Fire', tags: ['fire'] },
+      { title: 'Shelter and cold', tags: ['shelter'], not: ['fire'] }] },
+    { id: 'food', title: 'Food & plants', hint: 'what you can eat', groups: [
+      { title: 'Read first', tags: ['plant', 'danger'] },
+      { title: 'Wild greens and roots', tags: ['wild', 'food'], not: ['berry', 'nut', 'danger', 'index'] },
+      { title: 'Berries and fruit', tags: ['berry'] },
+      { title: 'Nuts and trees', tags: ['nut'] },
+      { title: 'Growing food', tags: ['garden'] }] },
+    { id: 'health', title: 'Health', hint: 'care without a doctor', groups: [
+      { title: 'By problem', tags: ['health', 'index'] },
+      { title: 'Home care', tags: ['remedy'] },
+      { title: 'Medicinal plants', tags: ['medicinal'], not: ['index'] }] },
+    { id: 'crisis', title: 'Blackout & crisis', hint: 'power cuts, sirens, supplies', wide: true, groups: [
+      { title: 'Power cut', tags: ['blackout'] },
+      { title: 'Alerts and war', tags: ['conflict'], not: ['blackout'] }] }
+  ];
+
+  function inGroup(e, g) {
+    return g.tags.every(function (t) { return e.tags.indexOf(t) >= 0; }) &&
+      !(g.not || []).some(function (t) { return e.tags.indexOf(t) >= 0; });
+  }
+
+  function groupEntries(g) {
+    var list = kb.entries.filter(function (e) { return inGroup(e, g); });
+    list.sort(function (a, b) {
+      var da = a.tags.indexOf('danger') >= 0, db = b.tags.indexOf('danger') >= 0;
+      if (da !== db) return da ? -1 : 1;
+      return a.title.toLowerCase() < b.title.toLowerCase() ? -1 : 1;
+    });
+    return list;
+  }
+
+  function topicCount(t) {
+    var seen = {};
+    t.groups.forEach(function (g) { groupEntries(g).forEach(function (e) { seen[e.id] = true; }); });
+    return Object.keys(seen).length;
+  }
+
+  var trail = [];   // screens visited, for back
+
+  function go(screen, replace) {
+    if (replace) trail.pop();
+    trail.push(screen);
+    draw();
+  }
+
+  function back() {
+    if (trail.length > 1) trail.pop();
+    draw();
+  }
+
+  function draw() {
+    var screen = trail[trail.length - 1];
+    log.innerHTML = '';
+    if (trail.length > 1) {
+      var nav = el('nav', 'crumbs');
+      nav.appendChild(chip('← back', back));
+      nav.appendChild(chip('home', function () { trail = []; go({ type: 'home' }); }));
+      log.appendChild(nav);
+    }
+    if (screen.type === 'home') drawHome();
+    else if (screen.type === 'topic') drawTopic(screen.id);
+    else {
+      if (screen.label) log.appendChild(el('div', 'q', esc(screen.label)));
+      log.appendChild(render(screen.result));
+    }
+    window.scrollTo(0, 0);
+  }
+
+  function drawHome() {
+    var grid = el('div', 'tiles');
+    TOPICS.forEach(function (t) {
+      var b = el('button', 'tile' + (t.id === 'danger' ? ' tile-danger' : '') + (t.wide ? ' tile-wide' : ''));
+      b.type = 'button';
+      b.appendChild(el('span', 'tile-title', esc(t.title)));
+      b.appendChild(el('span', 'tile-hint', esc(t.hint) + ' · ' + topicCount(t)));
+      b.addEventListener('click', function () { go({ type: 'topic', id: t.id }); });
+      grid.appendChild(b);
+    });
+    log.appendChild(grid);
+    log.appendChild(el('p', 'note', 'Or describe what you need below. metos only shows what its entries say, and tells you when it doesn’t know.'));
+  }
+
+  function drawTopic(id) {
+    var t = TOPICS.filter(function (x) { return x.id === id; })[0];
+    log.appendChild(el('h2', 'topic-title', esc(t.title)));
+    t.groups.forEach(function (g) {
+      var list = groupEntries(g);
+      if (!list.length) return;
+      var sec = el('section', 'group');
+      sec.appendChild(el('h3', null, esc(g.title)));
+      sec.appendChild(entryList(list));
+      log.appendChild(sec);
+    });
+  }
+
   function show(result, label) {
     if (!result) return;
-    log.appendChild(el('div', 'q', esc(label)));
-    var card = render(result);
-    log.appendChild(card);
-    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    go({ type: 'result', result: result, label: label });
   }
 
   function say(cls, text) {
@@ -327,12 +432,8 @@
   }
 
   function intro() {
-    var box = el('div', 'intro');
-    box.appendChild(el('p', null, 'A small knowledge base you can ask in plain words. It only shows what its entries say, and tells you when it doesn’t know.'));
-    var chips = el('div', 'chips');
-    EXAMPLES.forEach(function (q) { chips.appendChild(chip(q, function () { ask(q); })); });
-    box.appendChild(chips);
-    log.appendChild(box);
+    trail = [];
+    go({ type: 'home' });
   }
 
   function ask(q) {

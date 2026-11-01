@@ -57,6 +57,19 @@
   .tools input { display: none; }
 
   #log { padding: 8px 0 140px; }
+  .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0 12px; }
+  .tile { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; text-align: left; min-height: 88px;
+    padding: 14px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 6px;
+    font: inherit; cursor: pointer; }
+  .tile:hover, .tile:focus-visible { border-color: var(--accent); outline: none; }
+  .tile-title { font-size: 22px; line-height: 1.1; }
+  .tile-hint { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .tile-danger { grid-column: 1 / -1; min-height: 64px; background: var(--warn-bg); color: var(--warn-ink); border-color: transparent; }
+  .tile-danger .tile-hint { color: var(--warn-ink); }
+  .tile-wide { grid-column: 1 / -1; min-height: 64px; }
+  .crumbs { display: flex; gap: 8px; margin: 12px 0 4px; }
+  .topic-title { font-size: 22px; font-weight: normal; margin: 12px 0 4px; }
+  .group h3 { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: normal; margin: 18px 0 2px; }
   .q { font-family: var(--mono); font-size: 16.5px; color: var(--muted); margin: 24px 0 8px; }
   .q::before { content: "> "; color: var(--accent); }
 
@@ -178,7 +191,11 @@
   .list li { margin: 8px 0; }
   .list button { all: unset; cursor: pointer; font-weight: 600; text-decoration: underline; text-decoration-color: var(--line); }
   .list button:hover { color: var(--accent); }
-  .list .first { display: block; color: var(--muted); font-size: 16.5px; }
+  .list .first { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: var(--muted); font-size: 16.5px; }
+  .list { list-style: none; padding-left: 0; }
+  .list li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .tools-more summary { cursor: pointer; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .tools-more[open] .tools { margin-top: 8px; }
   .list .first.danger { color: var(--warn-ink); }
   .warn.check .link { background: none; border: 0; padding: 0; font: inherit; color: inherit; text-decoration: underline; cursor: pointer; }
 
@@ -202,19 +219,21 @@
   <div class="wrap">
     <header>
       <h1>metos <small id="count"></small></h1>
+      <details class="tools-more"><summary>edit</summary>
       <div class="tools">
         <label title="Read a kb folder directly, with its images">open folder<input id="folder" type="file" webkitdirectory multiple></label>
         <label title="Add .md or .txt entries">add entries<input id="files" type="file" accept=".md,.txt,text/markdown,text/plain" multiple></label>
         <label title="Turn a photo into a picture any device can show">add picture<input id="photo" type="file" accept="image/*"></label>
         <button id="new-entry" type="button" title="Write a new entry by hand">new entry</button>
       </div>
+      </details>
     </header>
     <div id="log"></div>
   </div>
 
   <form id="ask" autocomplete="off">
     <div class="wrap">
-      <input id="q" type="text" placeholder="Ask, e.g. how do I make water safe" aria-label="Question">
+      <input id="q" type="text" placeholder="Or describe it, e.g. white flowers by the ditch" aria-label="Question">
       <button type="submit">ask</button>
     </div>
   </form>
