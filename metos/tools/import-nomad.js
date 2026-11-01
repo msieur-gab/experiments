@@ -81,4 +81,34 @@ var written = [];
     written.push(r.slug);
   });
 });
+// Conditions with two or more remedies become index entries: "sore throat"
+// shows every entry that helps with it. Their searchTerms are the words people use.
+var byCondition = {};
+['natural_remedies.json', 'home_remedies.json'].forEach(function (n) {
+  load(n).remedies.forEach(function (r) {
+    (r.conditions || []).forEach(function (c) { (byCondition[c] = byCondition[c] || []).push(r.slug); });
+  });
+});
+var indexes = [];
+load('conditions.json').conditions.forEach(function (c) {
+  var ids = byCondition[c.slug] || [];
+  if (ids.length < 2) return;
+  var file = path.join(kbDir, 'for-' + c.slug + '.md');
+  var text = [
+    'title: ' + c.label,
+    'aka: ' + c.searchTerms.join(', '),
+    'tags: health index',
+    'includes: ' + ids.join(', '),
+    'source: Project NOMAD conditions.json (commit ' + COMMIT + '): the entries in this knowledge base used for ' + c.label.toLowerCase(),
+    'licence: Apache-2.0 (Project NOMAD)',
+    'origin: nomad/conditions.json#' + c.slug,
+    '',
+    'These entries say what can help with ' + c.label.toLowerCase() + ' (' + c.category.toLowerCase() + '), what the evidence says and when to get medical help. Open one to read it.'
+  ].join('\n') + '\n';
+  var said = keptSaid(file);
+  if (said) text += '\n## also said\n' + said + '\n';
+  if (!dry) fs.writeFileSync(file, text);
+  indexes.push('for-' + c.slug);
+});
 console.log((dry ? 'would write ' : 'wrote ') + written.length + ' entries: ' + written.join(', '));
+console.log((dry ? 'would write ' : 'wrote ') + indexes.length + ' condition indexes: ' + indexes.join(', '));

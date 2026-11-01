@@ -93,6 +93,90 @@ window.METOS_BUNDLE = {
    "text": "title: Fluids and rest\ntags: health remedy\nwarn: Severely ill individuals, those with signs of dehydration (no urination, sunken eyes, extreme thirst), or those unable to keep any fluid down should seek medical care promptly.\nsource: https://www.cdc.gov/common-cold/treatment/index.html, as summarised by Project NOMAD (home_remedies.json, commit 54ee30a)\nlicence: text Apache-2.0 (Project NOMAD), summarising a US government page (public domain)\norigin: nomad/home_remedies.json#fluids-and-rest\n\nGetting plenty of rest and drinking adequate fluids (water, clear broths, juice, or sports drinks) supports recovery from colds, fever, diarrhea, and nausea. Adults with diarrhea should drink water, fruit juices, sports drinks, sodas without caffeine, and salty broths.\n\n## how\nGet plenty of rest and drink plenty of fluids. If keeping liquids down is difficult, take small sips of water or suck on ice chips frequently rather than trying to drink large amounts at once.\n\n## evidence\nCDC recommends rest and fluids as primary home care measures for the common cold. MedlinePlus (NIH/NIDDK) similarly lists these as the foundation of diarrhea self-care, and advises nausea patients to take in small amounts of clear liquids often to stay hydrated.\n\n## safety\nSeverely ill individuals, those with signs of dehydration (no urination, sunken eyes, extreme thirst), or those unable to keep any fluid down should seek medical care promptly. Caffeine and alcohol are not effective rehydration choices.\n\n## used for\n- Common cold\n- Fever\n- Diarrhea\n- Nausea & vomiting\n\n## also said\n- i have the flu and feel awful what do i do\n- caught a cold, how do i get better faster\n- feverish and achy, nothing to take\n- sick in bed, what should i be drinking\n- kid has a cold, what do i do at home\n- what to drink when you have a cold\n- is it ok to drink coffee when sick\n- can i drink alcohol with a cold\n- husband has fever and chills, no doctor around\n- body aches and tired from a virus\n- how do i look after someone who is sick with fever\n- what do adults drink when they have diarrhea\n- broth or juice when sick?\n- elderly mother has a bad cold and wont get out of bed\n- feel weak and sick, how to recover\n- should i rest or keep working with a cold\n- too sick to eat, just want to lie down\n- i catch cold, what i must do\n- fever and no medicine, what helps the body\n- how much should i drink when i have fever\n- rest and fluids for flu\n- whole family down with a virus, basic care\n"
   },
   {
+   "name": "for-acne.md",
+   "text": "title: Acne\naka: acne, pimples, blackheads, acne treatment\ntags: health index\nincludes: aloe-vera, tea-tree-oil\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for acne\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#acne\n\nThese entries say what can help with acne (skin & wounds), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-burns.md",
+   "text": "title: Burns\naka: burns, minor burns, sunburn, scald, minor burn\ntags: health index\nincludes: aloe-vera, licorice-root, tea-tree-oil, cool-running-water-on-burns\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for burns\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#burns\n\nThese entries say what can help with burns (skin & wounds), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-canker-sores.md",
+   "text": "title: Canker & cold sores\naka: canker sores, cold sores, mouth sores, fever blisters, oral pain\ntags: health index\nincludes: licorice-root, salt-water-gargle\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for canker & cold sores\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#canker-sores\n\nThese entries say what can help with canker & cold sores (eyes, ears & mouth), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-common-cold.md",
+   "text": "title: Common cold\naka: common cold, cold symptoms, cold, flu symptoms\ntags: health index\nincludes: chamomile, echinacea, elderberry, goldenseal, honey-for-cough, fluids-and-rest, humidifier-and-steam, saline-nasal-rinse, salt-water-gargle\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for common cold\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#common-cold\n\nThese entries say what can help with common cold (cold, cough & allergy), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-cough.md",
+   "text": "title: Cough\naka: cough, cough suppressant, coughing, controls cough\ntags: health index\nincludes: honey-for-cough, humidifier-and-steam\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for cough\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#cough\n\nThese entries say what can help with cough (cold, cough & allergy), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-diarrhea.md",
+   "text": "title: Diarrhea\naka: diarrhea, antidiarrheal, loose stools, traveler’s diarrhea\ntags: health index\nincludes: goldenseal, fluids-and-rest, oral-rehydration, bland-small-meals\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for diarrhea\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#diarrhea\n\nThese entries say what can help with diarrhea (stomach & digestion), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-dry-skin.md",
+   "text": "title: Dry & chapped skin\naka: dry skin, chapped skin, chapped lips, skin protectant, cracked skin\ntags: health index\nincludes: aloe-vera, oatmeal-bath\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for dry & chapped skin\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#dry-skin\n\nThese entries say what can help with dry & chapped skin (skin & wounds), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-fever.md",
+   "text": "title: Fever\naka: fever, reduces fever, fever reducer, temporarily reduces fever\ntags: health index\nincludes: fluids-and-rest, cool-compress-fever\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for fever\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#fever\n\nThese entries say what can help with fever (pain, fever & inflammation), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-fungal-infection.md",
+   "text": "title: Athlete’s foot & ringworm\naka: athlete’s foot, ringworm, jock itch, antifungal, fungal infection, tinea\ntags: health index\nincludes: tea-tree-oil, keep-feet-dry-athlete-foot\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for athlete’s foot & ringworm\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#fungal-infection\n\nThese entries say what can help with athlete’s foot & ringworm (skin & wounds), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-headache.md",
+   "text": "title: Headache\naka: headache, migraine, head pain, tension headache\ntags: health index\nincludes: butterbur, feverfew, peppermint-oil, dark-quiet-room-headache\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for headache\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#headache\n\nThese entries say what can help with headache (pain, fever & inflammation), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-hemorrhoids.md",
+   "text": "title: Hemorrhoids\naka: hemorrhoids, hemorrhoidal, anal itching, rectal\ntags: health index\nincludes: horse-chestnut, fiber-and-water-constipation, sitz-bath\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for hemorrhoids\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#hemorrhoids\n\nThese entries say what can help with hemorrhoids (sleep, stress & general), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-indigestion.md",
+   "text": "title: Indigestion & upset stomach\naka: indigestion, upset stomach, gas, bloating, fullness, antacid\ntags: health index\nincludes: chamomile, ginger, peppermint-oil, turmeric, elevate-head-heartburn, bland-small-meals\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for indigestion & upset stomach\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#indigestion\n\nThese entries say what can help with indigestion & upset stomach (stomach & digestion), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-insect-bites-stings.md",
+   "text": "title: Insect bites & stings\naka: insect bites, insect stings, bug bites, bee sting, itching from insect bites\ntags: health index\nincludes: tea-tree-oil, cool-compress-fever, ice-and-elevation\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for insect bites & stings\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#insect-bites-stings\n\nThese entries say what can help with insect bites & stings (skin & wounds), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-menstrual-cramps.md",
+   "text": "title: Menstrual cramps\naka: menstrual cramps, menstrual pain, period pain, premenstrual\ntags: health index\nincludes: ginger, heating-pad\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for menstrual cramps\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#menstrual-cramps\n\nThese entries say what can help with menstrual cramps (pain, fever & inflammation), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-muscle-joint-pain.md",
+   "text": "title: Muscle & joint pain\naka: muscular aches, muscle aches, backache, arthritis, joint pain, minor pain of arthritis\ntags: health index\nincludes: boswellia, bromelain, turmeric, ice-and-elevation, heating-pad\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for muscle & joint pain\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#muscle-joint-pain\n\nThese entries say what can help with muscle & joint pain (pain, fever & inflammation), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-nasal-congestion.md",
+   "text": "title: Nasal congestion\naka: nasal congestion, stuffy nose, sinus congestion, decongestant, nasal decongestant\ntags: health index\nincludes: bromelain, humidifier-and-steam, saline-nasal-rinse\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for nasal congestion\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#nasal-congestion\n\nThese entries say what can help with nasal congestion (cold, cough & allergy), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-nausea-vomiting.md",
+   "text": "title: Nausea & vomiting\naka: nausea, vomiting, upset stomach associated with nausea\ntags: health index\nincludes: ginger, peppermint-oil, fluids-and-rest, bland-small-meals\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for nausea & vomiting\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#nausea-vomiting\n\nThese entries say what can help with nausea & vomiting (stomach & digestion), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-skin-rash-itch.md",
+   "text": "title: Rash & itching\naka: itching, rash, skin irritation, itchy skin, minor skin irritations, eczema\ntags: health index\nincludes: chamomile, licorice-root, turmeric, oatmeal-bath\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for rash & itching\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#skin-rash-itch\n\nThese entries say what can help with rash & itching (skin & wounds), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-sleeplessness.md",
+   "text": "title: Sleeplessness\naka: sleeplessness, insomnia, sleep aid, difficulty falling asleep, nighttime\ntags: health index\nincludes: chamomile, lavender, passionflower, valerian, dark-quiet-room-headache, sleep-hygiene\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for sleeplessness\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#sleeplessness\n\nThese entries say what can help with sleeplessness (sleep, stress & general), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-sore-throat.md",
+   "text": "title: Sore throat\naka: sore throat, sore mouth, minor sore throat, throat pain\ntags: health index\nincludes: chamomile, licorice-root, honey-for-cough, salt-water-gargle\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for sore throat\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#sore-throat\n\nThese entries say what can help with sore throat (cold, cough & allergy), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
+   "name": "for-wounds-cuts.md",
+   "text": "title: Wounds & cuts\naka: minor cuts, scrapes, wounds, first aid antiseptic, first aid to help prevent infection, abrasions\ntags: health index\nincludes: goldenseal, tea-tree-oil, clean-and-cover-wounds\nsource: Project NOMAD conditions.json (commit 54ee30a): the entries in this knowledge base used for wounds & cuts\nlicence: Apache-2.0 (Project NOMAD)\norigin: nomad/conditions.json#wounds-cuts\n\nThese entries say what can help with wounds & cuts (skin & wounds), what the evidence says and when to get medical help. Open one to read it.\n"
+  },
+  {
    "name": "foraging-rules.md",
    "text": "title: Foraging safety rules\naka: foraging, forage, wild food, wild plants, gathering plants, edibility test\ntags: plant wild food danger\nwarn: Never eat a wild plant you cannot identify with complete certainty.\nsee: deadly-lookalikes, nettle, dandelion, wild-garlic\nsource: compiled from general foraging references, verify before relying on it\n\nA few rules prevent most foraging accidents.\n\n## how\n1. Be 100 percent sure of the identification. Check several features, not one.\n2. Learn the deadly plants of your area first.\n3. Pick leaf by leaf. Do not pull up handfuls.\n4. Avoid roadsides, sprayed fields, polluted water and areas used by dogs.\n5. Start with a small amount of any new plant, and wait a day.\n6. Take only part of a patch so it regrows.\n7. Wash everything you pick.\n\n## safety\nEdibility tests that rely on tasting are not reliable for deadly plants: a single taste can be enough to poison. Avoid all wild mushrooms and all wild carrot-family plants unless an expert has shown you in person.\n\n## also said\n- foraging rules\n- wild food safety\n- edibility test\n- universal edibility test does it work\n- is it ok to taste a plant to see if its poisonous\n- how sure do I need to be before eating a wild plant\n- first time foraging what should I know\n- can I just eat a little bit of an unknown plant and wait\n- rules for picking wild plants\n- trying a new wild plant for the first time how much\n- should i wash wild greens before eating\n- can I pick plants next to the road\n- picking near fields that might be sprayed\n- dog walking area plants safe to eat?\n- how much of a patch should I take\n- pull up whole plants or just leaves\n- what should I learn first before eating wild things\n- my kids want to eat berries and leaves from the walk, any rules\n- how do i avoid poisoning myself when gathering food\n- gathering plants in a crisis, basic do and dont\n- general tips for collecting wild food\n- one feature matches the book, is that enough to identify\n- the app says its edible, can i trust it\n- plants near polluted water ok?\n- we need to find food in the wild, where do we start safely\n- foraging for beginners\n- is there a test to know if a plant is edible\n- rub on skin then lip then tongue test\n- how do I not overharvest\n- eat a small bit and wait 24 hours?\n- wild plant safety checklist\n- teaching my teenager to forage, what rules\n- ok to gather from a park?\n- i think i know this plant like 90 percent sure\n- what are the golden rules of foraging\n- picking handfuls quickly, bad idea?\n"
   },

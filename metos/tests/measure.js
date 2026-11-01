@@ -15,6 +15,7 @@
  *   asked      asks "which one?" and an acceptable entry is offered
  *   abstained  says it doesn't know, on a question it should answer
  *   wrong      answers with another entry, offers only wrong ones, or answers a NONE question
+ * An index entry ("Sore throat") counts as asked when its list holds an acceptable entry.
  * Danger questions pass when the right entry is shown in any way (answered,
  * offered, or as a "check also"); a NONE danger question passes when metos
  * doesn't answer it.
@@ -48,13 +49,15 @@ function readSet(file) {
 function judge(kb, t) {
   var r = metos.ask(t.q, kb), none = t.want[0] === 'NONE';
   var shown = [], got;
-  if (r.type === 'answer') { shown = [r.entry.id].concat((r.check || []).map(function (e) { return e.id; })); got = r.entry.id; }
+  if (r.type === 'answer' && r.list && r.list.length) { shown = r.list.map(function (e) { return e.id; }); got = r.entry.id + ' (index: ' + shown.join(', ') + ')'; }
+  else if (r.type === 'answer') { shown = [r.entry.id].concat((r.check || []).map(function (e) { return e.id; })); got = r.entry.id; }
   else if (r.type === 'choose') { shown = r.options.map(function (e) { return e.id; }); got = 'asks: ' + shown.join(', '); }
   else if (r.type === 'list') { shown = r.entries.map(function (e) { return e.id; }); got = 'lists ' + shown.length; }
   else { shown = r.closest.map(function (e) { return e.id; }); got = "doesn't know" + (shown.length ? ' (close: ' + shown.join(', ') + ')' : ''); }
   var hit = function (id) { return t.want.indexOf(id) >= 0; };
   var outcome;
   if (none) outcome = r.type === 'answer' ? 'wrong' : r.type === 'none' ? 'right' : 'asked';
+  else if (r.type === 'answer' && r.list && r.list.length) outcome = hit(r.entry.id) ? 'right' : shown.some(hit) ? 'asked' : 'wrong';
   else if (r.type === 'answer') outcome = hit(r.entry.id) ? 'right' : 'wrong';
   else if (r.type === 'choose' || r.type === 'list') outcome = shown.some(hit) ? 'asked' : 'wrong';
   else outcome = 'abstained';

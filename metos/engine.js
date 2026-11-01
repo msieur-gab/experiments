@@ -166,6 +166,7 @@
       names: names,
       said: said,
       lists: tokens((head.lists || '').replace(/,/g, ' ')),
+      includes: (head.includes || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean),
       aka: (head.aka || '').split(',').map(function (a) { return a.trim(); }).filter(Boolean),
       licence: head.licence || '',
       sections: sections,
@@ -403,7 +404,7 @@
       if (!nameWords[content[i]] && kb.allTags[content[i]] === undefined) leftover.push(content[i]);
     }
     var s = pickSection(e, u, leftover);
-    if (e.lists && e.lists.length) s.missing = null; // an index answers with its list
+    if ((e.lists && e.lists.length) || (e.includes && e.includes.length)) s.missing = null; // an index answers with its list
     return {
       type: 'answer',
       entry: e,
@@ -418,6 +419,8 @@
   // An index entry ("lists: wild food") shows every entry with those tags,
   // danger entries first, so new entries of that kind appear in it by themselves.
   function listOf(kb, e) {
+    var named = (e.includes || []).map(function (id) { return byId(kb, id); }).filter(Boolean);
+    if (named.length) return dangerFirst(named);
     if (!e.lists || !e.lists.length) return null;
     return withDanger(kb, listByTags(kb, e.lists).filter(function (x) { return x !== e; }));
   }
