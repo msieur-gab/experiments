@@ -12,8 +12,10 @@
  *   - kb/_out-of-scope.md: questions metos must not answer (label _none)
  *
  * Method (as TermNL and ptiLU): clues are words, word pairs and 3-4 letter
- * pieces (engine.js clues()); TF-IDF; a logistic regression with a light
- * penalty, trained in full batches with Adam from all-zero weights. No
+ * pieces (engine.js clues()), kept when they appear in 2 sentences or more;
+ * TF-IDF; a logistic regression with a light penalty and balanced classes
+ * (a label with few sentences weighs as much as one with many), trained in
+ * full batches with Adam from all-zero weights. No
  * randomness: the same files always give the same model. Weights are then
  * stored as whole numbers from -127 to 127 times one scale.
  */
@@ -24,6 +26,7 @@
   var C = 8;           // how freely weights may grow; TermNL's value
   var ROUNDS = 300;    // full passes over the examples
   var RATE = 0.05;     // Adam step size
+  var MIN_DF = 2;      // a clue must appear in at least 2 sentences (TermNL's value)
 
   // The sentences each label is taught with.
   function examples(kb, outOfScope) {
@@ -70,7 +73,7 @@
       docs.push(c);
       for (var f in c) df[f] = (df[f] || 0) + 1;
     });
-    var names = Object.keys(df).sort(), index = {}, F = names.length;
+    var names = Object.keys(df).filter(function (f) { return df[f] >= MIN_DF; }).sort(), index = {}, F = names.length;
     names.forEach(function (f, j) { index[f] = j; });
     // idf kept to 3 decimals, exactly as stored, so training sees what answering sees
     var idf = names.map(function (f) { return Math.round((Math.log((1 + N) / (1 + df[f])) + 1) * 1000) / 1000; });
@@ -78,12 +81,19 @@
     // sparse rows: [[clue index, value]], length 1
     var rows = docs.map(function (c) {
       var r = [], norm = 0;
-      for (var f in c) { var v = (1 + Math.log(c[f])) * idf[index[f]]; r.push([index[f], v]); norm += v * v; }
+      for (var f in c) {
+        if (index[f] === undefined) continue;
+        var v = (1 + Math.log(c[f])) * idf[index[f]]; r.push([index[f], v]); norm += v * v;
+      }
       norm = Math.sqrt(norm) || 1;
       r.forEach(function (p) { p[1] /= norm; });
       return r;
     });
     var y = ex.map(function (x) { return labels.indexOf(x.label); });
+    // balanced classes, as TermNL: each label counts as much as any other in total
+    var perLabel = {};
+    y.forEach(function (k) { perLabel[k] = (perLabel[k] || 0) + 1; });
+    var sw = y.map(function (k) { return N / (K * perLabel[k]); });
 
     var W = new Float64Array(F * K), b = new Float64Array(K);
     var mW = new Float64Array(F * K), vW = new Float64Array(F * K), mb = new Float64Array(K), vb = new Float64Array(K);
@@ -100,9 +110,9 @@
         var max = -Infinity, sum = 0;
         for (k = 0; k < K; k++) if (z[k] > max) max = z[k];
         for (k = 0; k < K; k++) { z[k] = Math.exp(z[k] - max); sum += z[k]; }
-        loss -= Math.log(z[y[i]] / sum + 1e-12);
+        loss -= sw[i] * Math.log(z[y[i]] / sum + 1e-12);
         for (k = 0; k < K; k++) {
-          var d = (z[k] / sum - (k === y[i] ? 1 : 0)) / N;
+          var d = sw[i] * (z[k] / sum - (k === y[i] ? 1 : 0)) / N;
           gb[k] += d;
           for (j = 0; j < r.length; j++) gW[r[j][0] * K + k] += r[j][1] * d;
         }
