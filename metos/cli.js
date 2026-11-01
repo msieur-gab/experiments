@@ -69,6 +69,9 @@ function render(r, why) {
     if (r.missing) out.push('(This entry has nothing on "' + r.missing + '". Here is the summary.)');
     out.push('');
     out.push(plain(r.text));
+    (r.list || []).forEach(function (e) {
+      out.push('- ' + e.title + (e.tags.indexOf('danger') >= 0 && e.warn ? '\n  ! ' + e.warn : '\n  ' + firstLine(e)));
+    });
     var more = r.entry.order.filter(function (s) { return s !== r.section; });
     if (more.length) out.push('\nalso: ' + more.join(', '));
     if (r.entry.see.length) out.push('see: ' + r.entry.see.join(', '));

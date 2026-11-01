@@ -258,6 +258,7 @@
     var portrait = r.section !== 'summary' && /(^|\n)(```pic[^\n]*\n[\s\S]*?\n```)/.exec(e.sections.summary || '');
     if (portrait) card.appendChild(el('div', 'body', md(portrait[2])));
     card.appendChild(el('div', 'body', md(r.text)));
+    if (r.list && r.list.length) card.appendChild(entryList(r.list));
 
     var chips = el('div', 'chips');
     e.order.forEach(function (s) {

@@ -38,6 +38,7 @@ Every entry in kb/, by title. Open any file in kb/ with a text editor to read it
 - Lavender — kb/lavender.md  (plant medicinal herb)
 - Licorice Root — kb/licorice-root.md  (plant medicinal herb)
 - Making a fire — kb/fire.md  (fire warmth cooking)
+- Medicinal plants — kb/medicinal-plants.md  (plant medicinal herb index)
 - Oatmeal or cool bath — kb/oatmeal-bath.md  (health remedy)
 - Oral rehydration solution (ORS) — kb/oral-rehydration.md  (health remedy)
 - Passionflower — kb/passionflower.md  (plant medicinal herb)
@@ -57,3 +58,4 @@ Every entry in kb/, by title. Open any file in kb/ with a text editor to read it
 - Turmeric — kb/turmeric.md  (plant medicinal herb)
 - Valerian — kb/valerian.md  (plant medicinal herb)
 - Wild garlic — kb/wild-garlic.md  (plant wild food)
+- Wild plants you can eat — kb/edible-wild-plants.md  (plant wild food index)

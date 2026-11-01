@@ -165,6 +165,7 @@
       tags: tags,
       names: names,
       said: said,
+      lists: tokens((head.lists || '').replace(/,/g, ' ')),
       aka: (head.aka || '').split(',').map(function (a) { return a.trim(); }).filter(Boolean),
       licence: head.licence || '',
       sections: sections,
@@ -402,14 +403,23 @@
       if (!nameWords[content[i]] && kb.allTags[content[i]] === undefined) leftover.push(content[i]);
     }
     var s = pickSection(e, u, leftover);
+    if (e.lists && e.lists.length) s.missing = null; // an index answers with its list
     return {
       type: 'answer',
       entry: e,
       section: s.section,
       text: s.text,
       missing: s.missing,
+      list: listOf(kb, e),
       u: u
     };
+  }
+
+  // An index entry ("lists: wild food") shows every entry with those tags,
+  // danger entries first, so new entries of that kind appear in it by themselves.
+  function listOf(kb, e) {
+    if (!e.lists || !e.lists.length) return null;
+    return withDanger(kb, listByTags(kb, e.lists).filter(function (x) { return x !== e; }));
   }
 
   function byId(kb, id) {
@@ -438,15 +448,20 @@
     return out;
   }
 
+  // A list of entries, with every danger entry that shares a tag with them
+  // added at the top.
+  function withDanger(kb, list) {
+    var tags = {};
+    list.forEach(function (e) { e.tags.forEach(function (t) { if (t !== 'danger') tags[t] = true; }); });
+    var extra = kb.entries.filter(function (e) {
+      return isDanger(e) && list.indexOf(e) < 0 && e.tags.some(function (t) { return tags[t]; });
+    });
+    return dangerFirst(extra.concat(list));
+  }
+
   function ask(query, kb) {
     var u = understand(query, kb);
     if (!kb.model) return askWords(query, kb, u);
-
-    // An explicit list request for a topic: list, as before.
-    if (u.tags.length && u.intent === 'list') {
-      var listed = askWords(query, kb, u);
-      if (listed.type === 'list') return listed;
-    }
 
     // An entry named outright that the model hasn't learnt yet (just
     // written, not relearnt): the word lists answer for it.
@@ -471,6 +486,22 @@
       r.check = dangerNear(kb, probs, best.e);
       return r;
     }
+    // A question about a kind of thing ("which plants can I eat", "wild
+    // food") rather than one thing: list every entry of that kind, most likely
+    // first, with the danger entries of that kind on top. An explicit list
+    // request always lists; otherwise only when the model has no good guess.
+    var topEntry = entries[0] ? entries[0].p : 0;
+    if (u.tags.length && !(u.ranked[0] && u.ranked[0].named) && (u.intent === 'list' || topEntry < MAYBE)) {
+      var kind = askWords(query, kb, u);
+      if (kind.type === 'list' && kind.entries.length >= 2) {
+        var rank = {};
+        probs.forEach(function (x, i) { rank[x.label] = i; });
+        kind.entries.sort(function (a, b) { return rank[a.id] - rank[b.id]; });
+        kind.entries = withDanger(kb, kind.entries);
+        kind.u = u;
+        return kind;
+      }
+    }
     var maybe = entries.filter(function (x) { return x.p >= MAYBE; }).slice(0, 3).map(function (x) { return x.e; });
     var near = dangerNear(kb, probs, null);
     if (top.label !== NONE && maybe.length) {
@@ -486,7 +517,7 @@
       var e = kb.entries[i];
       if (e.id === id) {
         var s = section && e.sections[section] ? section : 'summary';
-        return { type: 'answer', entry: e, section: s, text: e.sections[s] || '', missing: null };
+        return { type: 'answer', entry: e, section: s, text: e.sections[s] || '', missing: null, list: listOf(kb, e) };
       }
     }
     return null;
