@@ -23,3 +23,41 @@ Never cook dry beans only in a slow cooker or at low heat: lukewarm heat makes t
 
 ## store
 Dry shelled beans completely, until they shatter when hit with a hammer. Store in airtight jars in a dry, cool place.
+
+## also said
+- kidney beans
+- raw beans
+- dried beans how to cook
+- how long do i soak beans
+- my son ate a few raw red beans from the bag, is that dangerous
+- can I cook dry beans in the slow cooker overnight
+- we have a big sack of dried red beans but no idea how to make them safe
+- do I need to throw away the soaking water from the beans
+- how long boil kidney bean before eat
+- ate half cooked beans and now stomach cramps and vomiting
+- beans were still a bit hard, is that a problem or just unpleasant
+- is it ok to just simmer beans gently on low heat
+- why do people say red beans are poisonous
+- no time to soak, can I just boil the beans
+- what is the toxin in raw beans
+- how deep should I put bean seeds in the soil
+- when can I put runner beans outside
+- how far apart do bush beans go
+- runner beans need poles how tall
+- planted my beans in april and they rotted, too cold?
+- my green bean plant stopped making pods
+- should I pick green beans small or let them get big
+- how do I know when the dry beans are ready to pick
+- the pods are brown and rattle when i shake them
+- leaving bean pods on the plant to dry, then what
+- shelling beans for winter
+- how dry do beans need to be before I put them in jars
+- beans went mouldy in the jar
+- hammer test for dry beans
+- best way to keep dried beans for years
+- want a protein crop i can grow and store
+- haricot beans from the garden, how to keep them
+- grandma always boiled beans hard first, was she right
+- my beans jars smell musty what did i do wrong
+- beans soaked all day can i cook them now
+- how many raw beans make you sick

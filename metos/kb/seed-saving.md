@@ -20,3 +20,42 @@ Harder: squash, courgette, cucumber, cabbage family and maize. They cross with o
 
 ## store
 Store in paper envelopes or jars, cool, dry and dark. Label every packet with the plant, variety and year. Most seeds keep two to five years.
+
+## also said
+- save seeds
+- seed saving
+- keep seeds for next year
+- how to save tomato seeds
+- tomato seeds mould in jar is that normal
+- fermenting tomato seeds
+- can I save seeds from F1 plants
+- hybrid seeds dont grow the same why
+- the packet says F1 can i keep the seeds
+- heirloom vs hybrid seeds for saving
+- which vegetables are easiest to save seeds from
+- saving lettuce seeds
+- lettuce bolted, can I get seeds from it
+- my courgette seeds grew weird fruit
+- squash seeds from last year grew strange, cross pollination?
+- how far apart to keep squash varieties for seeds
+- saving seeds from cabbage
+- corn seeds saving crossing
+- how long do seeds last
+- how to store seeds
+- paper envelope or jar for seeds
+- how do I label saved seeds
+- seeds kept for 10 years still good?
+- dont want to buy seeds every year
+- which plants should i pick seeds from
+- choose the best plants for seed
+- seeds need to be dry before storing?
+- my seeds got mouldy in the jar
+- open pollinated what does it mean
+- self pollinating vegetables
+- cucumber seeds will they grow true
+- pea seeds for next season
+- keeping our own seed stock in a crisis
+- shake dry flower heads into bag
+- how to keep a seed bank at home
+- tomato seeds rinsing and drying on plate
+- cool dark dry place for seeds

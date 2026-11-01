@@ -20,3 +20,42 @@ At home: water heaters, toilet cisterns (the tank, not the bowl, and never if ch
 
 ## safety
 Avoid stagnant water, water near dead animals, below fields where fertiliser or pesticides are used, near mines, factories or roads after floods. Fuel and chemicals cannot be removed by boiling or bleach.
+
+## also said
+- find water
+- rainwater
+- collect rain
+- where to find water in the wild
+- how much water per person per day
+- how much water should we store for 4 people
+- how to collect rain with a tarp
+- rain barrel
+- first rain off the roof is dirty?
+- water from a spring is it clean
+- is stream water safe if it runs fast
+- where to take water from a river
+- upstream or downstream of the village
+- collect dew in the morning
+- how to get water from grass
+- tap stopped working, where is water in the house
+- can i drink the water from the toilet tank
+- water heater has water in it during outage?
+- water in the pipes when supply is cut
+- no running water since the storm what do we do
+- is pond water ok to collect
+- stagnant water safe?
+- water near a dead animal
+- stream below farm fields ok?
+- flood water near the road, can I use it
+- need more water in hot weather?
+- where to look for water when lost
+- the stream looks crystal clear can we drink straight
+- rain gutter water collect
+- our tank cleaner is blue chemical, can i still use cistern
+- how long does 20 litres last for a family
+- water source near mine or factory
+- best places for drinking water outdoors
+- plastic sheet to catch rain
+- running out of water, other sources at home
+- how much water for drinking and washing
+- spring water or river water which better

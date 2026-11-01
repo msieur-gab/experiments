@@ -1,0 +1,55 @@
+# metos messy questions
+
+Written on 1 November 2026 to test the word-list engine, before the model existed. Never used for training.
+Format: `- question => entry` (several acceptable entries joined with `|`, `NONE` when metos should say it doesn't know, `!danger` when missing the entry could hurt someone).
+
+- stream water smells off, what now => water-filter|water-boil
+- the tap stopped working and i only have water from the pond => water-boil|water-filter
+- how long do i need to keep it bubbling => water-boil
+- is water from the river ok to drink => water-boil|water-find
+- kids are thirsty and the water is brown => water-filter
+- how many drops of javel per litre => water-bleach
+- can i use the sun to clean water in plastic bottles => water-sodis
+- no gas no wood how do i make water drinkable => water-sodis|water-bleach
+- where can i find water if the taps are dry => water-find
+- how much should a person drink per day => water-find
+- catching rain off the roof => water-find
+- water tastes like petrol can i boil it => water-boil !danger
+- purification tablets => NONE
+- how to light a fire when everything is wet => fire
+- i have matches but the wood wont catch => fire
+- bbq inside the flat to stay warm is that ok => carbon-monoxide !danger
+- everyone has a headache since we put the heater on => carbon-monoxide !danger
+- we lost heating, flat is freezing => shelter
+- night outside with no tent => shelter
+- my hands are numb and i shiver a lot => shelter
+- running a generator in the garage => carbon-monoxide !danger
+- the leafy thing with yellow flowers in the lawn, can i eat it => dandelion
+- plants that burn your skin but you can make soup with => nettle
+- smells like garlic in the forest in spring => wild-garlic !danger
+- how do i tell wild garlic from lily of the valley => wild-garlic|deadly-lookalikes !danger
+- white umbrella flowers near the ditch, edible? => deadly-lookalikes !danger
+- found mushrooms can i eat them => NONE !danger
+- berries on a bush, are they safe => foraging-rules|deadly-lookalikes
+- how to test if a plant is poisonous => foraging-rules
+- what can i eat in the woods => foraging-rules
+- ortie => nettle
+- löwenzahn salat => dandelion
+- bärlauch => wild-garlic
+- pissenlit => dandelion
+- when do i put potatoes in the ground => potato|sowing-calendar
+- potatoes went green, still ok? => potato
+- what to plant in march => sowing-calendar
+- keeping seeds for next year => seed-saving
+- growing beans on a balcony => beans
+- red kidney beans raw => beans
+- how to store potatoes over winter => potato
+- how do i treat a deep cut => NONE
+- what to pack in an emergency bag => NONE
+- air raid siren what do i do => NONE
+- how long does food last in the freezer without power => NONE
+- how to keep my phone charged in a blackout => NONE
+- nearest bunker => NONE
+- how to make a radio work without power => NONE
+- iodine pills nuclear => NONE
+- how much food to stockpile for two weeks => NONE

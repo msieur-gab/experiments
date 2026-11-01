@@ -6,6 +6,7 @@
  *   node cli.js "how do I make water safe"
  *   node cli.js            (interactive)
  *   node cli.js --why "is wild garlic safe"   (show how it decided)
+ *   --words            answer with the word lists only, without the model
  *   --color / --raw    force pictures in colour, or as raw text
  */
 'use strict';
@@ -24,7 +25,10 @@ function loadKB() {
     .map(function (f) { return { name: f, text: fs.readFileSync(path.join(kbDir, f), 'utf8') }; });
   var vocabPath = path.join(here, 'vocab.txt');
   var vocab = fs.existsSync(vocabPath) ? fs.readFileSync(vocabPath, 'utf8') : '';
-  return metos.buildKB(files, vocab);
+  // the learned layer (learn.js); --words answers with the word lists alone
+  var modelPath = path.join(here, 'model.json');
+  var model = !wordsOnly && fs.existsSync(modelPath) ? JSON.parse(fs.readFileSync(modelPath, 'utf8')) : null;
+  return metos.buildKB(files, vocab, model);
 }
 
 // Image files cannot show in a terminal: print their caption instead.
@@ -61,6 +65,7 @@ function render(r, why) {
   if (r.type === 'answer') {
     out.push('== ' + r.entry.title + (r.section !== 'summary' ? ' / ' + r.section : '') + ' ==');
     if (r.entry.warn) out.push('! ' + r.entry.warn);
+    (r.check || []).forEach(function (e) { out.push('! check also: ' + e.title + (e.warn ? ' — ' + e.warn : '')); });
     if (r.missing) out.push('(This entry has nothing on "' + r.missing + '". Here is the summary.)');
     out.push('');
     out.push(plain(r.text));
@@ -74,8 +79,8 @@ function render(r, why) {
       out.push('- ' + e.title + '\n  ' + firstLine(e));
     });
   } else if (r.type === 'choose') {
-    out.push('Which one do you mean?');
-    r.options.forEach(function (e) { out.push('- ' + e.title); });
+    out.push(r.options.length === 1 ? 'Do you mean this?' : 'Which one do you mean?');
+    r.options.forEach(function (e) { out.push('- ' + e.title + (e.tags.indexOf('danger') >= 0 && e.warn ? '\n  ! ' + e.warn : '')); });
   } else {
     out.push("I don't have that in the knowledge base.");
     if (r.closest.length) out.push('Closest: ' + r.closest.map(function (e) { return e.title; }).join(', '));
@@ -83,8 +88,14 @@ function render(r, why) {
   if (why) {
     out.push('\n-- why --');
     out.push('intent: ' + r.u.intent + '   aspect: ' + (r.u.aspect || '-') + '   tags: ' + (r.u.tags.join(' ') || '-'));
+    if (r.u.model) {
+      out.push('model: ' + r.u.model.map(function (m) { return m.id + ' ' + m.p + '%'; }).join(', '));
+      if (r.u.clues) out.push('clues for ' + r.u.model[0].id + ': ' + r.u.clues.map(function (c) { return c[0] + ' ' + (c[1] >= 0 ? '+' : '') + c[1].toFixed(2); }).join(', '));
+      out.push('answer at ' + Math.round(metos.SURE * 100) + '%, ask from ' + Math.round(metos.MAYBE * 100) + '%, danger entries shown from ' + Math.round(metos.DANGER * 100) + '%');
+    }
+    out.push('word lists:');
     r.u.ranked.slice(0, 4).forEach(function (x) {
-      out.push(x.score + '  ' + x.entry.id + '  (' + x.why.join(', ') + ')');
+      out.push('  ' + x.score + '  ' + x.entry.id + '  (' + x.why.join(', ') + ')');
     });
   }
   return out.join('\n');
@@ -92,7 +103,8 @@ function render(r, why) {
 
 var args = process.argv.slice(2);
 var why = args.indexOf('--why') >= 0;
-args = args.filter(function (a) { return !/^--(why|color|raw)$/.test(a); });
+var wordsOnly = args.indexOf('--words') >= 0;
+args = args.filter(function (a) { return !/^--(why|color|raw|words)$/.test(a); });
 var kb = loadKB();
 
 if (args.length) {

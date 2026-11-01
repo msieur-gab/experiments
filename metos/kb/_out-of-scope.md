@@ -1,0 +1,94 @@
+# Out of scope
+
+Questions metos must not answer, because no entry covers them. They teach the model to say "I don't have that". One per line, starting with "- ". Remove a line once an entry covers it.
+
+- my friend cut his hand deep with a knife its bleeding a lot what do i do
+- how do you put on a tourniquet properly
+- burnt my arm on the pan, ice or cold water??
+- how to tell if an ankle is broken or just sprained
+- how many chest compressions per minute for cpr
+- cpr on a child is it different
+- someone is choking and cant breathe help
+- how to make a splint for a broken arm
+- bee sting swelling a lot is that an allergy
+- tick bite how do i get the tick out
+- signs of a concussion after a fall
+- how long can paracetamol be kept after expiry date
+- can i give ibuprofen to my 4 year old
+- what should be in a basic first aid kit
+- insulin without a fridge how long does it last
+- how do you dry chanterelles you bought at the market
+- which mushrooms can i grow at home on coffee grounds
+- how to set a snare for rabbits
+- gutting a fish step by step
+- best bait for trout in a river
+- how to tell if fish is still fresh
+- a dog is growling at me in the street what do i do
+- what to do if you meet a wild boar in the forest
+- how to find north without a compass
+- how do i read a topographic map contour lines
+- how to use a compass with a map
+- is a storm coming, how to read the clouds
+- what does an orange weather warning mean
+- how do i tune a hand crank radio to emergency broadcasts
+- phone has no signal how do i send an sos
+- how to make my phone battery last 3 days in a blackout
+- which channel on a walkie talkie for emergencies
+- how to charge a phone from a car battery
+- my potato battery wont light the bulb what am i doing wrong
+- how big a power bank do i need for a week
+- can i run a fridge on a camping solar panel
+- generator how many watts for a freezer
+- what does the long siren followed by short ones mean
+- test of the emergency alert on my phone today was that real
+- what to pack in a grab bag for evacuation
+- where is my nearest evacuation point
+- what to do when the air raid siren goes off and we live on the 6th floor
+- is a basement safe enough as a bomb shelter
+- how to tape windows against blast
+- iodine tablets how much and when
+- how far away from a nuclear plant is safe after an accident
+- can i wash radiation off my skin with soap
+- how long does fallout stay dangerous
+- how long do tinned beans last past the date
+- swollen can of tomatoes is it ok to eat
+- how much rice and pasta should a family of four stockpile
+- best foods for a 2 week stockpile that dont need cooking
+- how to rotate my food stock so nothing expires
+- how to cook rice without electricity
+- how do i make a haybox cooker
+- can i bake bread without an oven
+- how to make a toilet from a bucket when the water is off
+- what to do with poo when toilets dont work
+- how to wash hands with very little water
+- how to keep a flat warm in winter without heating
+- best way to insulate windows with blankets or bubble wrap
+- how to stop pipes freezing when the heating is off
+- pipe burst in the kitchen where is the stopcock
+- water in the basement after the flood, how do i pump it out
+- the flood water ruined the carpet is it safe to keep
+- what to do with my cat during an evacuation
+- how much food and water for a dog in an emergency kit
+- baby formula ran out what can i give instead
+- how to keep a newborn warm in a power cut
+- how much cash should i keep at home for emergencies
+- the atm isnt working how do i pay for things
+- which documents should i keep in a waterproof bag
+- how do i get a copy of my passport if it got lost in the flood
+- fire extinguisher which type for the kitchen
+- chip pan on fire do i throw water on it
+- smoke alarm keeps beeping every minute
+- co alarm chirping, is it the battery or a leak
+- how do i light the pilot light on my gas boiler
+- is it safe to eat snow
+- how to grow sweet potatoes from a supermarket one
+- how to make potato vodka
+- nettle rash on my kid's legs how do i soothe it
+- how to get rid of dandelions in my lawn for good
+- how to store garlic bulbs so they dont sprout
+- is the seed bank in svalbard still open
+- lost in the woods and its getting dark should i keep walking or stay put
+- whats the weather today
+- tell me a joke
+- what is 17 times 23
+- who won the football last night

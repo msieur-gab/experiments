@@ -13,6 +13,9 @@
   var vocabText = '';
   var images = {};       // "img/x.svg" -> object URL, when a folder was opened
   var kb = null;
+  var model = window.METOS_MODEL || null;   // the learned layer (learn.js)
+  var outOfScope = '';                     // kb/_out-of-scope.md, teaches "I don't have that"
+  var learning = false;
 
   var EXAMPLES = [
     'how do I make water safe',
@@ -26,8 +29,29 @@
   // ---- loading -------------------------------------------------------------
 
   function rebuild() {
-    kb = metos.buildKB(files, vocabText);
+    kb = metos.buildKB(files, vocabText, model);
     countEl.textContent = kb.entries.length + ' entries';
+    relearnIfNeeded();
+  }
+
+  // metos relearns where it runs: when the entries no longer match what the
+  // model was taught (an entry saved, a folder opened), it learns again here,
+  // in the browser, from the same files. It takes a few seconds.
+  function relearnIfNeeded() {
+    if (!window.metosLearn || learning || !files.length) return;
+    var oos = metosLearn.bullets(outOfScope);
+    var fp = metosLearn.fingerprint(metosLearn.examples(kb, oos));
+    if (model && model.fingerprint === fp) return;
+    learning = true;
+    countEl.textContent = kb.entries.length + ' entries · learning…';
+    setTimeout(function () {
+      var m = metosLearn.learn(metos.buildKB(files, vocabText, null), oos);
+      learning = false;
+      model = m;
+      kb = metos.buildKB(files, vocabText, model);
+      countEl.textContent = kb.entries.length + ' entries · learnt';
+      say('note', 'Learnt again from ' + m.examples + ' sentences in ' + m.seconds + ' s.');
+    }, 60);
   }
 
   function readFile(f) {
@@ -191,6 +215,12 @@
   function whyText(u) {
     if (!u) return '';
     var lines = ['intent: ' + u.intent + '   aspect: ' + (u.aspect || '-') + '   tags: ' + (u.tags.join(' ') || '-')];
+    if (u.model) {
+      lines.push('model: ' + u.model.map(function (m) { return m.id + ' ' + m.p + '%'; }).join(', '));
+      if (u.clues) lines.push('clues: ' + u.clues.map(function (c) { return c[0] + ' ' + (c[1] >= 0 ? '+' : '') + c[1].toFixed(2); }).join(', '));
+      lines.push('answers at ' + Math.round(metos.SURE * 100) + '%, asks from ' + Math.round(metos.MAYBE * 100) + '%, danger entries shown from ' + Math.round(metos.DANGER * 100) + '%');
+      lines.push('word lists:');
+    }
     u.ranked.slice(0, 5).forEach(function (r) {
       lines.push(r.score + '  ' + r.entry.id + '  (' + r.why.join(', ') + ')');
     });
@@ -212,6 +242,17 @@
     card.appendChild(el('h2', null, esc(e.title)));
     if (r.section !== 'summary') card.appendChild(el('div', 'sec', esc(r.section)));
     if (e.warn) card.appendChild(el('div', 'warn', esc(e.warn)));
+    // a danger entry the question also comes close to: shown before the answer
+    (r.check || []).forEach(function (d) {
+      var box = el('div', 'warn check');
+      var b = el('button', 'link');
+      b.type = 'button';
+      b.textContent = 'Check also: ' + d.title;
+      b.addEventListener('click', function () { show(metos.open(kb, d.id), d.title); });
+      box.appendChild(b);
+      if (d.warn) box.appendChild(el('div', null, esc(d.warn)));
+      card.appendChild(box);
+    });
     if (r.missing) card.appendChild(el('p', 'note', 'This entry has nothing on “' + esc(r.missing) + '”. Here is the summary.'));
     // A picture in the summary is the entry's portrait: show it on every card.
     var portrait = r.section !== 'summary' && /(^|\n)(```pic[^\n]*\n[\s\S]*?\n```)/.exec(e.sections.summary || '');
@@ -243,7 +284,8 @@
       b.textContent = e.title;
       b.addEventListener('click', function () { show(metos.open(kb, e.id), e.title); });
       li.appendChild(b);
-      li.appendChild(el('span', 'first', esc(firstLine(e))));
+      if (e.tags.indexOf('danger') >= 0 && e.warn) li.appendChild(el('span', 'first danger', esc(e.warn)));
+      else li.appendChild(el('span', 'first', esc(firstLine(e))));
       ul.appendChild(li);
     });
     return ul;
@@ -256,7 +298,7 @@
       card.appendChild(el('h2', null, esc(r.u.tags.join(' + '))));
       card.appendChild(entryList(r.entries));
     } else if (r.type === 'choose') {
-      card.appendChild(el('p', null, 'Which one do you mean?'));
+      card.appendChild(el('p', null, r.options.length === 1 ? 'Do you mean this?' : 'Which one do you mean?'));
       card.appendChild(entryList(r.options));
     } else {
       card.appendChild(el('p', null, 'I don’t have that in the knowledge base.'));
@@ -541,6 +583,8 @@
     get kb() { return kb; },
     get files() { return files; },
     get vocabText() { return vocabText; },
+    get outOfScope() { return outOfScope; },
+    get model() { return model; },
     get server() { return server; },
     upsert: upsert, rebuild: rebuild, show: show, say: say, md: md, el: el, esc: esc, chip: chip,
     pictureTool: pictureTool, download: download, saveEntry: saveEntry
@@ -549,6 +593,7 @@
   if (window.METOS_BUNDLE) {
     files = window.METOS_BUNDLE.files.slice();
     vocabText = window.METOS_BUNDLE.vocab;
+    outOfScope = window.METOS_BUNDLE.outOfScope || '';
   }
 
   function start() {
@@ -563,7 +608,7 @@
     fetch('api/kb', { cache: 'no-store' })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (b) {
-        if (b && b.files) { files = b.files; vocabText = b.vocab || vocabText; server = true; }
+        if (b && b.files) { files = b.files; vocabText = b.vocab || vocabText; outOfScope = b.outOfScope || outOfScope; server = true; }
       })
       .catch(function () {})
       .then(start);

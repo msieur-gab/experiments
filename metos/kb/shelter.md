@@ -26,3 +26,42 @@ Stay dry: wet clothes lose most of their warmth. Change or dry clothes as soon a
 
 ## symptoms
 Hypothermia: shivering, clumsiness, slurred speech, confusion. Shivering can stop when it gets worse. Get the person dry, insulated from the ground, out of the wind, and warm them with body heat and warm drinks if they can swallow.
+
+## also said
+- shelter
+- debris hut
+- lean to
+- hypothermia
+- how to build a shelter in the woods
+- we are lost and it will be dark soon, need shelter
+- freezing at night lying on the ground
+- cold coming from the ground even with sleeping bag
+- what to put under me to sleep warm outside
+- where should i set up camp
+- is it safe to camp in a dry riverbed
+- camping under a big dead tree ok?
+- shelter from leaves and branches how
+- how thick should the leaves be on the roof
+- shelter big or small which is warmer
+- my clothes are wet and I'm shivering
+- my friend is shivering and talking slurred
+- he stopped shivering but is confused, is that good
+- how to warm up someone who is too cold
+- person very cold clumsy and confused
+- hypothermia symptoms
+- child very cold and wet after falling in river what do we do
+- what comes first shelter water or food
+- windy and raining, how to stay warm without tent
+- block the door of shelter
+- ridge pole for shelter
+- shelter near water how close
+- cold and wet hiking, nobody can feel their hands
+- how long can you survive cold and wet
+- stay warm with no gear
+- emergency shelter with no tent
+- hollow ground flooding at night
+- warm drinks for someone freezing?
+- sleeping outside in autumn how not to freeze
+- old lady here my husband is very cold and confused after the storm
+- natural materials to make a hut
+- body heat to warm someone

@@ -17,6 +17,7 @@
   var CLOSE = 3;      // two subjects within this distance: ask which one
 
   var DEFAULT_SECTION = { about: 'summary', how: 'how', safety: 'safety' };
+  var SAID = 'also said';
 
   // ---- words ---------------------------------------------------------------
 
@@ -123,18 +124,27 @@
       head.title = rest.length ? rest.shift().replace(/^#+\s*/, '').trim() : id;
     }
 
+    // "## also said" holds what people say when this entry is the answer.
+    // It teaches the model (train.js) and is never shown as an answer.
     var sections = {}, order = [], current = 'summary', buf = [], inCode = false;
+    var said = [], shown = [];
     function flush() {
       var t = buf.join('\n').trim();
-      if (t) { sections[current] = t; order.push(current); }
+      if (current === SAID) {
+        t.split('\n').forEach(function (l) {
+          l = l.replace(/^\s*[-*]\s+/, '').trim();
+          if (l) said.push(l);
+        });
+      } else if (t) { sections[current] = t; order.push(current); }
       buf = [];
     }
     for (var j = 0; j < rest.length; j++) {
       var l = rest[j];
       if (/^```/.test(l)) inCode = !inCode;
       var h = !inCode && /^##\s+(.+)$/.exec(l);
-      if (h) { flush(); current = fold(h[1]).trim(); continue; }
+      if (h) { flush(); current = fold(h[1]).trim(); if (current !== SAID) shown.push(l); continue; }
       buf.push(l);
+      if (current !== SAID) shown.push(l);
     }
     flush();
 
@@ -143,7 +153,7 @@
     var see = (head.see || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
 
     var bodyWords = {};
-    var all = tokens(words(rest.join('\n')));
+    var all = tokens(words(shown.join('\n')));
     for (var b = 0; b < all.length; b++) bodyWords[all[b]] = true;
 
     return {
@@ -154,20 +164,24 @@
       see: see,
       tags: tags,
       names: names,
+      said: said,
+      aka: (head.aka || '').split(',').map(function (a) { return a.trim(); }).filter(Boolean),
+      licence: head.licence || '',
       sections: sections,
       order: order,
       bodyWords: bodyWords
     };
   }
 
-  function buildKB(files, vocabText) {
+  function buildKB(files, vocabText, model) {
     var entries = [], allTags = {};
     for (var i = 0; i < files.length; i++) {
       var e = parseEntry(files[i].text, files[i].name);
       entries.push(e);
       for (var t = 0; t < e.tags.length; t++) allTags[e.tags[t]] = true;
     }
-    return { entries: entries, vocab: parseVocab(vocabText || ''), allTags: allTags };
+    if (model === undefined && typeof root !== 'undefined' && root.METOS_MODEL) model = root.METOS_MODEL;
+    return { entries: entries, vocab: parseVocab(vocabText || ''), allTags: allTags, model: model || null };
   }
 
   // ---- understanding -------------------------------------------------------
@@ -243,6 +257,71 @@
     };
   }
 
+  // ---- the learned layer ----------------------------------------------------
+  //
+  // A small model trained from each entry's title, aka and "## also said"
+  // lines (learn.js). It reads clues, not meaning: each word, each pair of
+  // neighbouring words, and 3-4 letter pieces of each word, so "rebot" still
+  // looks like "reboot". The same method as TermNL / ptiLU: TF-IDF clues and
+  // a logistic regression, weights stored as whole numbers from -127 to 127.
+  //
+  // It only chooses which entry to open. The answer is still the entry's own
+  // text, and below the thresholds metos asks or says it doesn't know.
+
+  var SURE = 0.5;     // at or above: answer
+  var MAYBE = 0.15;   // from here to SURE: ask "do you mean...?"
+  var DANGER = 0.08;  // a danger entry this likely is always shown too
+  var NONE = '_none'; // the label taught by kb/_out-of-scope.md
+
+  function clues(words) {
+    var out = [], prev = '<s>';
+    for (var i = 0; i < words.length; i++) {
+      var t = words[i];
+      out.push('w:' + t, 'b:' + prev + '_' + t);
+      var p = '<' + t + '>';
+      for (var n = 3; n <= 4; n++) {
+        for (var j = 0; j + n <= p.length; j++) out.push('c:' + p.slice(j, j + n));
+      }
+      prev = t;
+    }
+    out.push('b:' + prev + '_</s>');
+    return out;
+  }
+
+  // clue -> weight in the sentence (TF-IDF, scaled to length 1)
+  function vector(model, words) {
+    var counts = {}, cs = clues(words), v = [], norm = 0;
+    for (var i = 0; i < cs.length; i++) if (model.clues[cs[i]]) counts[cs[i]] = (counts[cs[i]] || 0) + 1;
+    for (var c in counts) {
+      var x = (1 + Math.log(counts[c])) * model.clues[c][0] / 1000;
+      v.push([c, x]);
+      norm += x * x;
+    }
+    norm = Math.sqrt(norm) || 1;
+    for (var k = 0; k < v.length; k++) v[k][1] /= norm;
+    return v;
+  }
+
+  // -> [{ label, p, clues: [[clue, weight]] }], most likely first
+  function predict(model, words) {
+    var K = model.labels.length, logit = [], v = vector(model, words), i, k;
+    for (k = 0; k < K; k++) logit.push(model.bias[k] * model.scale);
+    for (i = 0; i < v.length; i++) {
+      var w = model.clues[v[i][0]];
+      for (k = 0; k < K; k++) logit[k] += v[i][1] * w[k + 1] * model.scale;
+    }
+    var max = Math.max.apply(null, logit), sum = 0, out = [];
+    for (k = 0; k < K; k++) sum += Math.exp(logit[k] - max);
+    for (k = 0; k < K; k++) out.push({ label: model.labels[k], p: Math.exp(logit[k] - max) / sum, k: k });
+    out.sort(function (a, b) { return b.p - a.p; });
+    // the clues that pushed the top choice most, for --why
+    var top = out[0], why = [];
+    for (i = 0; i < v.length; i++) why.push([v[i][0], v[i][1] * model.clues[v[i][0]][top.k + 1] * model.scale]);
+    why.sort(function (a, b) { return b[1] - a[1]; });
+    top.clues = why.slice(0, 6);
+    return out;
+  }
+
   // ---- answering -----------------------------------------------------------
 
   function listByTags(kb, tags) {
@@ -282,8 +361,10 @@
     return { section: 'summary', text: e.sections.summary || '', missing: missing };
   }
 
-  function ask(query, kb) {
-    var u = understand(query, kb);
+  // The word-list engine: the whole of metos when there is no model, and the
+  // fallback for entries the model hasn't learnt yet.
+  function askWords(query, kb, u) {
+    u = u || understand(query, kb);
     var top = u.ranked[0], second = u.ranked[1];
     var strong = top && top.score >= MIN_SCORE && top.named;
 
@@ -310,8 +391,12 @@
       return { type: 'choose', options: options, u: u };
     }
 
-    var e = top.entry, nameWords = {}, leftover = [];
-    tokens(top.nameHit).forEach(function (w) { nameWords[w] = true; });
+    return answer(top.entry, top.nameHit, u, kb);
+  }
+
+  function answer(e, nameHit, u, kb) {
+    var nameWords = {}, leftover = [];
+    tokens(nameHit || '').forEach(function (w) { nameWords[w] = true; });
     var content = withoutStops(u.words, kb.vocab);
     for (var i = 0; i < content.length; i++) {
       if (!nameWords[content[i]] && kb.allTags[content[i]] === undefined) leftover.push(content[i]);
@@ -325,6 +410,74 @@
       missing: s.missing,
       u: u
     };
+  }
+
+  function byId(kb, id) {
+    for (var i = 0; i < kb.entries.length; i++) if (kb.entries[i].id === id) return kb.entries[i];
+    return null;
+  }
+
+  function isDanger(e) { return e.tags.indexOf('danger') >= 0; }
+
+  // Danger entries the question comes close to, besides the one answered.
+  function dangerNear(kb, probs, except) {
+    var out = [];
+    for (var i = 0; i < probs.length; i++) {
+      var e = probs[i].label !== NONE && byId(kb, probs[i].label);
+      if (e && e !== except && isDanger(e) && probs[i].p >= DANGER) out.push(e);
+    }
+    return out;
+  }
+
+  // Danger entries first, then the rest; no repeats.
+  function dangerFirst(list) {
+    var seen = {}, out = [];
+    list.filter(isDanger).concat(list.filter(function (e) { return !isDanger(e); })).forEach(function (e) {
+      if (!seen[e.id]) { seen[e.id] = true; out.push(e); }
+    });
+    return out;
+  }
+
+  function ask(query, kb) {
+    var u = understand(query, kb);
+    if (!kb.model) return askWords(query, kb, u);
+
+    // An explicit list request for a topic: list, as before.
+    if (u.tags.length && u.intent === 'list') {
+      var listed = askWords(query, kb, u);
+      if (listed.type === 'list') return listed;
+    }
+
+    // An entry named outright that the model hasn't learnt yet (just
+    // written, not relearnt): the word lists answer for it.
+    var named = u.ranked[0];
+    if (named && named.named && named.score >= MIN_SCORE && kb.model.labels.indexOf(named.entry.id) < 0) {
+      return askWords(query, kb, u);
+    }
+
+    var probs = predict(kb.model, u.words).filter(function (x) {
+      return x.label === NONE || byId(kb, x.label);
+    });
+    u.model = probs.slice(0, 5).map(function (x) { return { id: x.label, p: Math.round(x.p * 100) }; });
+    u.clues = probs[0] && probs[0].clues;
+    var top = probs[0], entries = [];
+    for (var i = 0; i < probs.length; i++) {
+      if (probs[i].label !== NONE) entries.push({ e: byId(kb, probs[i].label), p: probs[i].p });
+    }
+    var best = entries[0];
+
+    if (top && top.label !== NONE && top.p >= SURE) {
+      var r = answer(best.e, '', u, kb);
+      r.check = dangerNear(kb, probs, best.e);
+      return r;
+    }
+    var maybe = entries.filter(function (x) { return x.p >= MAYBE; }).slice(0, 3).map(function (x) { return x.e; });
+    var near = dangerNear(kb, probs, null);
+    if (top.label !== NONE && maybe.length) {
+      return { type: 'choose', options: dangerFirst(near.concat(maybe)), u: u };
+    }
+    var closest = entries.filter(function (x) { return x.p >= 0.05; }).slice(0, 3).map(function (x) { return x.e; });
+    return { type: 'none', closest: dangerFirst(near.concat(closest)), u: u };
   }
 
   // Follow-up: show one section of one entry, by id.
@@ -341,8 +494,9 @@
 
   var api = {
     tokens: tokens, parseVocab: parseVocab, parseEntry: parseEntry,
-    buildKB: buildKB, understand: understand, ask: ask, open: open,
-    MIN_SCORE: MIN_SCORE, CLOSE: CLOSE
+    buildKB: buildKB, understand: understand, ask: ask, askWords: askWords, open: open,
+    clues: clues, predict: predict,
+    MIN_SCORE: MIN_SCORE, CLOSE: CLOSE, SURE: SURE, MAYBE: MAYBE, DANGER: DANGER, NONE: NONE
   };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.metos = api;

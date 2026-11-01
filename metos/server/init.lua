@@ -44,6 +44,7 @@ local function bundle()
   return {
     built = os.date('!%Y-%m-%d'),
     vocab = Slurp(path.join(here, 'vocab.txt')) or '',
+    outOfScope = Slurp(path.join(kbdir, '_out-of-scope.md')) or '',
     files = listEntries()
   }
 end

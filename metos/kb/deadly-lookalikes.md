@@ -25,3 +25,43 @@ Avoid all wild plants of the carrot family (white umbrella flower heads) unless 
 
 ## symptoms
 Vomiting, diarrhoea, racing or irregular heartbeat, confusion, trouble breathing. Symptoms from autumn crocus and death cap can start many hours later. Seek help immediately and keep a sample of the plant.
+
+## also said
+- poisonous plants
+- hemlock
+- death cap
+- foxglove
+- which plants can kill you in the woods
+- white umbrella flowers by the stream, can I eat the leaves
+- tall plant with purple spots on the stem and fern leaves
+- crushed a plant and it smells like mice
+- plant looks like wild carrot or parsley, is it safe
+- wild carrot or hemlock
+- found a big white mushroom in the forest, can we eat it
+- most dangerous mushroom
+- purple bell flowers on a tall spike are they toxic
+- is foxglove the same as comfrey, the leaves look alike
+- hairy leaves in a rosette, I thought it was comfrey
+- white little bells with two big leaves, poisonous?
+- lily of the valley poisonous
+- pink flowers like crocus in autumn in the meadow
+- my kid chewed some leaves and now is vomiting
+- ate a wild plant and now my heart is racing
+- after eating wild greens my heart beats irregular
+- we ate mushrooms yesterday and felt fine but now terrible diarrhoea
+- symptoms hours after eating plants
+- someone ate something wild and is confused and cant breathe properly
+- should I keep a piece of the plant I ate
+- what poisonous plants grow in central europe
+- water hemlock
+- what plant from the carrot family is deadly
+- toxic plants to learn before foraging
+- plant growing in a ditch with white flower heads like an umbrella
+- heart poison plants in the garden
+- what does hemlock look like
+- death cap mushroom how to recognise
+- plants that look like edible ones but kill
+- is cow parsley safe or is it the deadly one
+- my dog dug up a plant and my son touched it then ate, which plants are deadly
+- vomiting and diarrhoea after picking leaves outdoors
+- old man here, picked "parsley" by the river, now unwell
